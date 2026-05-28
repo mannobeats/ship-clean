@@ -1,0 +1,78 @@
+{
+  "name": "ship-clean",
+  "version": "0.1.0",
+  "description": "One install, one command, one quality gate for AI-assisted software teams.",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "ship-clean": "./dist/cli.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./presets/recommended": {
+      "import": "./dist/rules/presets/recommended.js",
+      "types": "./dist/rules/presets/recommended.d.ts"
+    },
+    "./presets/react": {
+      "import": "./dist/rules/presets/react.js",
+      "types": "./dist/rules/presets/react.d.ts"
+    },
+    "./presets/monorepo": {
+      "import": "./dist/rules/presets/monorepo.js",
+      "types": "./dist/rules/presets/monorepo.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "dev": "tsx src/cli.ts",
+    "build": "tsup",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "prepare": "pnpm build",
+    "ship-clean": "tsx src/cli.ts",
+    "dogfood": "tsx src/cli.ts check --cwd ."
+  },
+  "keywords": [
+    "ai-agent",
+    "code-quality",
+    "cli",
+    "conventions",
+    "lint"
+  ],
+  "dependencies": {
+    "@biomejs/biome": "2.4.16",
+    "@clack/prompts": "1.4.0",
+    "c12": "4.0.0-beta.5",
+    "citty": "0.2.2",
+    "cross-spawn": "7.0.6",
+    "es-module-lexer": "2.1.0",
+    "jsonc-parser": "3.3.1",
+    "nypm": "0.6.6",
+    "oxc-parser": "0.133.0",
+    "oxlint": "1.67.0",
+    "picocolors": "1.1.1",
+    "tinyglobby": "0.2.16",
+    "typescript": "6.0.3",
+    "yaml": "2.9.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/cross-spawn": "6.0.6",
+    "@types/node": "25.9.1",
+    "fast-check": "4.8.0",
+    "tsx": "4.22.3",
+    "tsup": "8.5.1",
+    "vitest": "4.1.7"
+  },
+  "packageManager": "pnpm@10.22.0"
+}

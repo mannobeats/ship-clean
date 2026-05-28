@@ -1,0 +1,26 @@
+{
+  "engines": {
+    "biome": false,
+    "graph": true,
+    "package": true,
+    "policy": true,
+    "typescript": false
+  },
+  "include": ["src/**/*.{ts,tsx}"],
+  "rules": [
+    {
+      "type": "export-check",
+      "name": "pages-export-default",
+      "files": ["src/pages/**/*.tsx"],
+      "expect": "default",
+      "message": "Pages need default exports."
+    },
+    {
+      "type": "boundary",
+      "name": "components-no-lib",
+      "from": ["src/components/**"],
+      "to": ["src/lib/**"],
+      "message": "Components must not import lib directly."
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "engines": {
+    "biome": false,
+    "graph": true,
+    "package": true,
+    "policy": true,
+    "typescript": false
+  },
+  "include": ["src/**/*.{ts,tsx}"],
+  "rules": [
+    {
+      "type": "export-check",
+      "name": "pages-export-default",
+      "files": ["src/pages/**/*.tsx"],
+      "expect": "default",
+      "severity": "error",
+      "message": "Pages need default exports."
+    },
+    {
+      "type": "file-pattern",
+      "name": "no-barrels",
+      "files": ["src/**/index.ts"],
+      "expect": "absent",
+      "severity": "warn",
+      "message": "No barrels."
+    },
+    {
+      "type": "boundary",
+      "name": "components-no-lib",
+      "from": ["src/components/**"],
+      "to": ["src/lib/**"],
+      "severity": "error",
+      "message": "Components must not import lib directly."
+    },
+    {
+      "type": "dependency",
+      "name": "no-moment",
+      "package": "moment",
+      "expect": "absent",
+      "severity": "error",
+      "message": "Use a smaller date library instead of moment."
+    }
+  ]
+}
