@@ -1,22 +1,16 @@
 import { existsSync } from "node:fs";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
 import type { IntelligenceIndex, IntelligenceSymbolKind } from "./types.js";
 
-export const intelligenceIndexPath = (cwd: string): string =>
-  join(cwd, ".ship-clean", "intelligence.json");
-
 export const intelligenceDbPath = (cwd: string): string =>
   join(cwd, ".ship-clean", "intelligence.sqlite");
 
-export type IntelligenceStorageBackend = "json" | "sqlite";
-
 export interface IntelligenceStorageStatus {
-  backend: IntelligenceStorageBackend;
+  backend: "sqlite";
   dbPath: string;
-  jsonPath: string;
-  sqliteAvailable: boolean;
+  sqliteReady: true;
 }
 
 interface SqliteStatement {
@@ -38,22 +32,41 @@ interface BetterSqliteModule {
   default?: SqliteConstructor;
 }
 
-const loadSqliteConstructor = async (): Promise<SqliteConstructor | null> => {
+const sqliteBuildError = (error: unknown): Error => {
+  const detail = error instanceof Error ? error.message : String(error);
+  return new Error(
+    [
+      "Ship Clean requires SQLite storage through better-sqlite3.",
+      "The native better-sqlite3 binding is not available in this install.",
+      "Run `pnpm approve-builds` and approve `better-sqlite3`, then run `pnpm install`.",
+      `Original error: ${detail}`,
+    ].join("\n"),
+  );
+};
+
+const loadSqliteConstructor = async (): Promise<SqliteConstructor> => {
   try {
     const loaded = (await import("better-sqlite3")) as BetterSqliteModule | SqliteConstructor;
-    if (typeof loaded === "function") {
-      const probe = new loaded(":memory:");
-      probe.close();
-      return loaded;
+    const Database = typeof loaded === "function" ? loaded : loaded.default;
+    if (!Database) {
+      throw new Error("better-sqlite3 did not expose a Database constructor.");
     }
-    if (!loaded.default) {
-      return null;
-    }
-    const probe = new loaded.default(":memory:");
+
+    const probe = new Database(":memory:");
     probe.close();
-    return loaded.default;
-  } catch {
-    return null;
+    return Database;
+  } catch (error) {
+    throw sqliteBuildError(error);
+  }
+};
+
+const openDatabase = async (cwd: string): Promise<SqliteDatabase> => {
+  const Database = await loadSqliteConstructor();
+  await mkdir(dirname(intelligenceDbPath(cwd)), { recursive: true });
+  try {
+    return new Database(intelligenceDbPath(cwd));
+  } catch (error) {
+    throw sqliteBuildError(error);
   }
 };
 
@@ -104,18 +117,11 @@ const createSchema = (db: SqliteDatabase): void => {
   `);
 };
 
-const writeSqliteIndex = async (cwd: string, index: IntelligenceIndex): Promise<boolean> => {
-  const Database = await loadSqliteConstructor();
-  if (!Database) {
-    return false;
-  }
-
-  let db: SqliteDatabase;
-  try {
-    db = new Database(intelligenceDbPath(cwd));
-  } catch {
-    return false;
-  }
+export const writeIntelligenceIndex = async (
+  cwd: string,
+  index: IntelligenceIndex,
+): Promise<void> => {
+  const db = await openDatabase(cwd);
   try {
     createSchema(db);
     const write = db.transaction(() => {
@@ -174,7 +180,6 @@ const writeSqliteIndex = async (cwd: string, index: IntelligenceIndex): Promise<
     });
 
     write();
-    return true;
   } finally {
     db.close();
   }
@@ -190,22 +195,12 @@ const readNumber = (row: Record<string, unknown>, key: string): number => {
   return typeof value === "number" ? value : Number(value);
 };
 
-const readSqliteIndex = async (cwd: string): Promise<IntelligenceIndex | null> => {
+export const readIntelligenceIndex = async (cwd: string): Promise<IntelligenceIndex | null> => {
   if (!existsSync(intelligenceDbPath(cwd))) {
     return null;
   }
 
-  const Database = await loadSqliteConstructor();
-  if (!Database) {
-    return null;
-  }
-
-  let db: SqliteDatabase;
-  try {
-    db = new Database(intelligenceDbPath(cwd));
-  } catch {
-    return null;
-  }
+  const db = await openDatabase(cwd);
   try {
     createSchema(db);
     const createdAt = readString(
@@ -260,44 +255,18 @@ const readSqliteIndex = async (cwd: string): Promise<IntelligenceIndex | null> =
       schemaVersion: 1,
       stats: JSON.parse(statsJson) as IntelligenceIndex["stats"],
     };
-  } catch {
-    return null;
   } finally {
     db.close();
-  }
-};
-
-export const writeIntelligenceIndex = async (
-  cwd: string,
-  index: IntelligenceIndex,
-): Promise<void> => {
-  const path = intelligenceIndexPath(cwd);
-  await mkdir(dirname(path), { recursive: true });
-  await writeSqliteIndex(cwd, index);
-  await writeFile(path, `${JSON.stringify(index, null, 2)}\n`);
-};
-
-export const readIntelligenceIndex = async (cwd: string): Promise<IntelligenceIndex | null> => {
-  const sqliteIndex = await readSqliteIndex(cwd);
-  if (sqliteIndex) {
-    return sqliteIndex;
-  }
-
-  try {
-    return JSON.parse(await readFile(intelligenceIndexPath(cwd), "utf8")) as IntelligenceIndex;
-  } catch {
-    return null;
   }
 };
 
 export const getIntelligenceStorageStatus = async (
   cwd: string,
 ): Promise<IntelligenceStorageStatus> => {
-  const sqliteAvailable = (await loadSqliteConstructor()) !== null;
+  await loadSqliteConstructor();
   return {
-    backend: sqliteAvailable && existsSync(intelligenceDbPath(cwd)) ? "sqlite" : "json",
+    backend: "sqlite",
     dbPath: intelligenceDbPath(cwd),
-    jsonPath: intelligenceIndexPath(cwd),
-    sqliteAvailable,
+    sqliteReady: true,
   };
 };

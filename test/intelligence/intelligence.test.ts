@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -8,7 +8,7 @@ import { main } from "../../src/cli.js";
 import { buildAgentContext } from "../../src/intelligence/context.js";
 import { buildIntelligenceIndex } from "../../src/intelligence/indexer.js";
 import { affectedFiles, impactForFile, searchIntelligence } from "../../src/intelligence/query.js";
-import { readIntelligenceIndex } from "../../src/intelligence/store.js";
+import { intelligenceDbPath, readIntelligenceIndex } from "../../src/intelligence/store.js";
 import { renderStudioHtml, startStudioServer } from "../../src/studio/server.js";
 
 const tempDirs: string[] = [];
@@ -73,10 +73,7 @@ describe("code intelligence", () => {
     expect(index.stats.symbolCount).toBeGreaterThanOrEqual(5);
     expect(index.stats.edgeCount).toBe(2);
 
-    const persisted = JSON.parse(
-      await readFile(join(cwd, ".ship-clean/intelligence.json"), "utf8"),
-    );
-    expect(persisted.stats.fileCount).toBe(3);
+    expect(intelligenceDbPath(cwd)).toBe(join(cwd, ".ship-clean", "intelligence.sqlite"));
     await expect(readIntelligenceIndex(cwd)).resolves.toMatchObject({
       stats: { fileCount: 3 },
     });

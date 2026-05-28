@@ -55,9 +55,20 @@ const loadIndex = async (options: StudioServerOptions): Promise<IntelligenceInde
   (await readIntelligenceIndex(resolveCwd(options.cwd))) ?? buildIntelligenceIndex(options);
 
 const graphPayload = (index: IntelligenceIndex): unknown => {
+  const dependents = new Map<string, number>();
+  for (const file of index.files) {
+    for (const item of file.imports) {
+      if (item.target) {
+        dependents.set(item.target, (dependents.get(item.target) ?? 0) + 1);
+      }
+    }
+  }
+
   const nodes = index.files.map((file) => ({
+    folder: file.path.split("/").slice(0, -1).join("/") || ".",
     id: file.path,
     imports: file.imports.length,
+    importedBy: dependents.get(file.path) ?? 0,
     symbols: file.symbols.length,
   }));
   const edges = index.files.flatMap((file) =>
@@ -83,16 +94,22 @@ export const renderStudioHtml = (): string => `<!doctype html>
     <title>Ship Clean Studio</title>
     <style>
       :root {
-        color-scheme: dark;
-        --bg: #101114;
-        --panel: #17191e;
-        --panel-2: #20242b;
-        --border: #303640;
-        --text: #f3f5f7;
-        --muted: #9da7b3;
-        --accent: #66d9c7;
-        --danger: #ff6b6b;
-        --warn: #f8c555;
+        color-scheme: light;
+        --bg: oklch(98.2% 0.006 95);
+        --surface: oklch(99.4% 0.004 95);
+        --surface-2: oklch(96.4% 0.006 95);
+        --surface-3: oklch(92.8% 0.008 95);
+        --ink: oklch(20.8% 0.015 95);
+        --soft: oklch(47.5% 0.018 95);
+        --faint: oklch(68% 0.015 95);
+        --line: oklch(88.4% 0.008 95);
+        --accent: oklch(48% 0.09 174);
+        --accent-2: oklch(83% 0.06 174);
+        --selected: oklch(93% 0.035 174);
+        --warn: oklch(72% 0.13 75);
+        --radius: 10px;
+        --shadow: 0 20px 70px -48px oklch(22% 0.015 95 / 58%);
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       }
 
       * { box-sizing: border-box; }
@@ -100,103 +117,225 @@ export const renderStudioHtml = (): string => `<!doctype html>
       body {
         margin: 0;
         background: var(--bg);
-        color: var(--text);
-        font: 14px/1.45 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--ink);
+        font-size: 14px;
+        line-height: 1.45;
       }
 
-      button, input {
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        background: var(--panel-2);
-        color: var(--text);
+      button,
+      input {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        color: inherit;
         font: inherit;
       }
 
       button {
+        align-items: center;
+        background: var(--surface);
         cursor: pointer;
-        padding: 9px 12px;
+        display: inline-flex;
+        font-weight: 560;
+        gap: 8px;
+        min-height: 36px;
+        padding: 0 12px;
+        transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
       }
 
+      button:hover { background: var(--surface-2); border-color: var(--surface-3); }
+      button:active { transform: translateY(1px); }
+
       input {
-        min-width: 260px;
-        padding: 10px 12px;
+        background: var(--surface);
+        min-height: 40px;
+        min-width: 320px;
+        outline: none;
+        padding: 0 12px;
       }
+
+      input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent-2), transparent 62%);
+      }
+
+      h1,
+      h2,
+      h3,
+      p { margin: 0; }
+
+      h1 {
+        font-size: 19px;
+        letter-spacing: 0;
+        line-height: 1.15;
+      }
+
+      h2 {
+        color: var(--soft);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+      }
+
+      h3 { font-size: 13px; letter-spacing: 0; }
 
       .shell {
         display: grid;
-        grid-template-columns: 320px minmax(0, 1fr);
-        min-height: 100vh;
+        grid-template-columns: 336px minmax(0, 1fr);
+        min-height: 100dvh;
       }
 
-      aside {
-        border-right: 1px solid var(--border);
-        background: #14161a;
-        padding: 18px;
-      }
-
-      main {
+      .sidebar {
+        background: var(--surface);
+        border-right: 1px solid var(--line);
         display: grid;
-        grid-template-rows: auto minmax(360px, 1fr) 280px;
-        min-width: 0;
+        grid-template-rows: auto auto minmax(0, 1fr);
+        min-height: 100dvh;
+        padding: 20px 16px;
       }
 
-      header {
-        align-items: center;
-        border-bottom: 1px solid var(--border);
-        display: flex;
-        gap: 12px;
-        justify-content: space-between;
-        padding: 14px 18px;
+      .brand {
+        display: grid;
+        gap: 6px;
+        padding: 0 2px 18px;
       }
 
-      h1, h2, h3, p { margin: 0; }
-      h1 { font-size: 18px; letter-spacing: 0; }
-      h2 { font-size: 13px; color: var(--muted); font-weight: 600; text-transform: uppercase; }
-      h3 { font-size: 14px; }
+      .muted { color: var(--soft); }
 
       .stats {
+        border-bottom: 1px solid var(--line);
+        border-top: 1px solid var(--line);
         display: grid;
-        gap: 8px;
         grid-template-columns: repeat(3, 1fr);
-        margin: 16px 0;
+        margin-bottom: 18px;
       }
 
-      .stat, .panel, .file {
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        background: var(--panel);
+      .stat {
+        display: grid;
+        gap: 1px;
+        padding: 14px 10px;
       }
 
-      .stat { padding: 10px; }
-      .stat strong { display: block; font-size: 20px; }
-      .stat span, .muted { color: var(--muted); }
+      .stat + .stat { border-left: 1px solid var(--line); }
+      .stat strong { font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-size: 21px; }
+      .stat span { color: var(--soft); font-size: 12px; }
+
+      .section-head {
+        align-items: center;
+        display: flex;
+        justify-content: space-between;
+        padding: 0 2px 10px;
+      }
+
+      .file-count { color: var(--faint); font-size: 12px; }
 
       .files {
         display: grid;
-        gap: 8px;
-        margin-top: 12px;
-        max-height: calc(100vh - 210px);
+        gap: 4px;
         overflow: auto;
+        padding-right: 4px;
       }
 
       .file {
-        display: grid;
-        gap: 4px;
-        padding: 10px;
-      }
-
-      .file button {
-        border: 0;
         background: transparent;
-        color: var(--accent);
-        padding: 0;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        display: grid;
+        gap: 3px;
+        padding: 9px 10px;
         text-align: left;
+        width: 100%;
       }
 
-      .map {
+      .file:hover { background: var(--surface-2); border-color: var(--line); }
+      .file.active { background: var(--selected); border-color: color-mix(in oklch, var(--accent), transparent 52%); }
+      .file-name { color: var(--ink); font-weight: 620; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .file-meta { color: var(--soft); font-size: 12px; }
+
+      main {
+        display: grid;
+        grid-template-rows: auto minmax(420px, 1fr) 300px;
+        min-width: 0;
+      }
+
+      .topbar {
+        align-items: center;
+        background: color-mix(in oklch, var(--bg), var(--surface) 66%);
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        gap: 16px;
+        justify-content: space-between;
+        padding: 18px 22px;
+      }
+
+      .title-stack {
+        display: grid;
+        gap: 5px;
+        min-width: 220px;
+      }
+
+      .toolbar {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+
+      .primary {
+        background: var(--ink);
+        border-color: var(--ink);
+        color: var(--surface);
+      }
+
+      .primary:hover { background: oklch(27% 0.014 95); border-color: oklch(27% 0.014 95); }
+
+      .canvas-wrap {
+        min-height: 0;
+        padding: 18px 18px 12px;
+      }
+
+      .canvas-panel {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
         height: 100%;
-        min-height: 360px;
+        min-height: 420px;
+        overflow: hidden;
         position: relative;
+      }
+
+      .graph-toolbar {
+        align-items: center;
+        background: color-mix(in oklch, var(--surface), transparent 6%);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        display: flex;
+        gap: 6px;
+        left: 14px;
+        padding: 5px;
+        position: absolute;
+        top: 14px;
+        z-index: 2;
+      }
+
+      .graph-toolbar button {
+        border-color: transparent;
+        min-height: 30px;
+        padding: 0 10px;
+      }
+
+      .graph-hint {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        bottom: 14px;
+        color: var(--soft);
+        font-size: 12px;
+        left: 14px;
+        padding: 6px 10px;
+        position: absolute;
       }
 
       svg {
@@ -205,79 +344,163 @@ export const renderStudioHtml = (): string => `<!doctype html>
         width: 100%;
       }
 
+      .edge {
+        stroke: var(--line);
+        stroke-width: 1.1;
+        transition: opacity 160ms ease, stroke 160ms ease, stroke-width 160ms ease;
+      }
+
+      .edge.dimmed { opacity: .12; }
+      .edge.active { opacity: .9; stroke: var(--accent); stroke-width: 1.8; }
+      .node-hit { cursor: pointer; fill: transparent; }
+      .node-dot { fill: var(--surface); stroke: var(--accent); stroke-width: 1.8; transition: r 160ms ease, fill 160ms ease; }
+      .node-label { fill: var(--ink); font-size: 12px; font-weight: 650; pointer-events: none; }
+      .node-sub { fill: var(--soft); font-size: 10.5px; pointer-events: none; }
+      .node.dimmed { opacity: .24; }
+      .node.active .node-dot { fill: var(--accent); r: 8; }
+      .node.active .node-label { fill: var(--ink); font-weight: 780; }
+
       .bottom {
-        border-top: 1px solid var(--border);
+        border-top: 1px solid var(--line);
         display: grid;
         gap: 12px;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        padding: 12px;
+        grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr);
+        min-height: 0;
+        padding: 0 18px 18px;
       }
 
       .panel {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
         min-width: 0;
+        overflow: hidden;
+      }
+
+      .panel-head {
+        align-items: center;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 14px;
+      }
+
+      .panel-body {
+        height: calc(100% - 46px);
         overflow: auto;
-        padding: 12px;
+        padding: 6px 14px 14px;
       }
 
       .result {
-        border-bottom: 1px solid var(--border);
-        padding: 8px 0;
+        border-bottom: 1px solid var(--line);
+        display: grid;
+        gap: 4px;
+        padding: 10px 0;
       }
 
       .result:last-child { border-bottom: 0; }
-      code { color: var(--accent); }
-      pre { white-space: pre-wrap; word-break: break-word; }
+      code { color: var(--accent); font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-size: 12px; }
+      pre {
+        color: var(--soft);
+        font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+        font-size: 12px;
+        line-height: 1.55;
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
 
-      @media (max-width: 880px) {
+      .empty {
+        align-content: center;
+        color: var(--soft);
+        display: grid;
+        min-height: 160px;
+      }
+
+      @media (max-width: 980px) {
         .shell { grid-template-columns: 1fr; }
-        aside { border-right: 0; border-bottom: 1px solid var(--border); }
-        main { grid-template-rows: auto 420px auto; }
+        .sidebar { border-right: 0; min-height: auto; }
+        .files { max-height: 300px; }
+        main { grid-template-rows: auto 460px auto; }
+        .topbar { align-items: stretch; flex-direction: column; }
+        .toolbar { justify-content: stretch; }
+        input { min-width: 0; width: 100%; }
         .bottom { grid-template-columns: 1fr; }
       }
     </style>
   </head>
   <body>
     <div class="shell">
-      <aside>
-        <h1>Ship Clean Studio</h1>
-        <p class="muted">Local code map, impact, and agent context.</p>
+      <aside class="sidebar">
+        <div class="brand">
+          <h1>Ship Clean Studio</h1>
+          <p class="muted">Code map, impact radius, and agent context from SQLite.</p>
+        </div>
         <div class="stats">
           <div class="stat"><strong id="fileCount">0</strong><span>files</span></div>
           <div class="stat"><strong id="symbolCount">0</strong><span>symbols</span></div>
           <div class="stat"><strong id="edgeCount">0</strong><span>imports</span></div>
         </div>
-        <h2>Files</h2>
-        <div class="files" id="files"></div>
+        <section>
+          <div class="section-head">
+            <h2>Files</h2>
+            <span class="file-count" id="visibleFiles">0 shown</span>
+          </div>
+          <div class="files" id="files"></div>
+        </section>
       </aside>
       <main>
-        <header>
-          <div>
+        <header class="topbar">
+          <div class="title-stack">
             <h1>Project Brain</h1>
-            <p class="muted" id="createdAt">Loading index...</p>
+            <p class="muted" id="createdAt">Loading SQLite index...</p>
           </div>
-          <div>
+          <div class="toolbar">
             <input id="query" placeholder="Search symbols or ask for context" />
-            <button id="search">Search</button>
+            <button class="primary" id="search">Search</button>
             <button id="sync">Sync</button>
           </div>
         </header>
-        <section class="map" aria-label="Import graph">
-          <svg id="graph" role="img"></svg>
+        <section class="canvas-wrap">
+          <div class="canvas-panel">
+            <div class="graph-toolbar">
+              <button id="zoomOut" title="Zoom out">−</button>
+              <button id="resetView" title="Reset graph view">Reset</button>
+              <button id="zoomIn" title="Zoom in">+</button>
+            </div>
+            <svg id="graph" role="img" aria-label="Import graph"></svg>
+            <div class="graph-hint">Drag to pan, scroll to zoom, select a node to focus impact.</div>
+          </div>
         </section>
         <section class="bottom">
           <div class="panel">
-            <h2>Results</h2>
-            <div id="results"></div>
+            <div class="panel-head">
+              <h2>Results</h2>
+              <span class="muted" id="resultCount">No query</span>
+            </div>
+            <div class="panel-body" id="results">
+              <div class="empty">Search a symbol or select a file from the graph.</div>
+            </div>
           </div>
           <div class="panel">
-            <h2>Impact / Context</h2>
-            <pre id="details" class="muted">Select a file or search a task.</pre>
+            <div class="panel-head">
+              <h2>Impact / Context</h2>
+              <span class="muted" id="selectedFile">No file selected</span>
+            </div>
+            <div class="panel-body">
+              <pre id="details">Select a file to inspect dependencies, dependents, and affected files.</pre>
+            </div>
           </div>
         </section>
       </main>
     </div>
     <script>
-      const state = { graph: { nodes: [], edges: [] }, files: [] };
+      const state = {
+        files: [],
+        graph: { nodes: [], edges: [] },
+        selected: null,
+        transform: { x: 0, y: 0, scale: 1 },
+      };
       const $ = (id) => document.getElementById(id);
 
       async function request(path, options) {
@@ -286,49 +509,116 @@ export const renderStudioHtml = (): string => `<!doctype html>
         return response.json();
       }
 
-      function drawGraph() {
-        const svg = $("graph");
-        const width = svg.clientWidth || 900;
-        const height = svg.clientHeight || 500;
-        const nodes = state.graph.nodes;
-        const edges = state.graph.edges;
-        const radius = Math.min(width, height) * 0.34;
-        const cx = width / 2;
-        const cy = height / 2;
+      function escapeHtml(value) {
+        return String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
+      }
+
+      function labelFor(path) {
+        return path.split("/").slice(-2).join("/");
+      }
+
+      function relatedSet(file) {
+        const related = new Set([file]);
+        for (const edge of state.graph.edges) {
+          if (edge.from === file) related.add(edge.to);
+          if (edge.to === file) related.add(edge.from);
+        }
+        return related;
+      }
+
+      function layoutGraph(width, height) {
+        const nodes = [...state.graph.nodes].sort((left, right) => {
+          const folderSort = left.folder.localeCompare(right.folder);
+          return folderSort || left.id.localeCompare(right.id);
+        });
+        const columns = Math.max(3, Math.ceil(Math.sqrt(nodes.length * 1.45)));
+        const rows = Math.max(1, Math.ceil(nodes.length / columns));
+        const left = 90;
+        const top = 86;
+        const usableWidth = Math.max(1, width - left * 2);
+        const usableHeight = Math.max(1, height - top * 2);
+        const xStep = usableWidth / Math.max(columns - 1, 1);
+        const yStep = usableHeight / Math.max(rows - 1, 1);
         const positions = new Map();
+
         nodes.forEach((node, index) => {
-          const angle = (Math.PI * 2 * index) / Math.max(nodes.length, 1);
+          const col = index % columns;
+          const row = Math.floor(index / columns);
+          const stagger = row % 2 === 0 ? 0 : xStep * .34;
+          const folderNudge = (node.folder.length % 5) * 4;
           positions.set(node.id, {
-            x: cx + Math.cos(angle) * radius,
-            y: cy + Math.sin(angle) * radius,
+            x: Math.min(width - 76, left + col * xStep + stagger),
+            y: top + row * yStep + folderNudge,
           });
         });
-        const edgeMarkup = edges.map((edge) => {
+
+        return positions;
+      }
+
+      function drawGraph() {
+        const svg = $("graph");
+        const width = svg.clientWidth || 960;
+        const height = svg.clientHeight || 540;
+        const canvasWidth = Math.max(width, 1200);
+        const canvasHeight = Math.max(height, 760);
+        const positions = layoutGraph(canvasWidth, canvasHeight);
+        const active = state.selected ? relatedSet(state.selected) : null;
+
+        const edgeMarkup = state.graph.edges.map((edge) => {
           const from = positions.get(edge.from);
           const to = positions.get(edge.to);
           if (!from || !to) return "";
-          return '<line x1="' + from.x + '" y1="' + from.y + '" x2="' + to.x + '" y2="' + to.y + '" stroke="#303640" stroke-width="1" />';
+          const isActive = state.selected && (edge.from === state.selected || edge.to === state.selected);
+          const isDimmed = active && !active.has(edge.from) && !active.has(edge.to);
+          return '<line class="edge ' + (isActive ? "active" : "") + ' ' + (isDimmed ? "dimmed" : "") + '" x1="' + from.x + '" y1="' + from.y + '" x2="' + to.x + '" y2="' + to.y + '" />';
         }).join("");
-        const nodeMarkup = nodes.map((node) => {
+
+        const nodeMarkup = state.graph.nodes.map((node) => {
           const point = positions.get(node.id);
-          const label = node.id.split("/").slice(-2).join("/");
-          return '<g><circle cx="' + point.x + '" cy="' + point.y + '" r="7" fill="#66d9c7" />' +
-            '<text x="' + (point.x + 10) + '" y="' + (point.y + 4) + '" fill="#f3f5f7" font-size="12">' +
-            label.replaceAll("&", "&amp;").replaceAll("<", "&lt;") + '</text></g>';
+          const isSelected = node.id === state.selected;
+          const isDimmed = active && !active.has(node.id);
+          const label = escapeHtml(labelFor(node.id));
+          const meta = escapeHtml(node.symbols + " symbols, " + node.importedBy + " inbound");
+          const r = Math.min(10, 4 + Math.sqrt(node.symbols + node.importedBy));
+          const importance = node.symbols + node.importedBy + node.imports;
+          const showLabel = isSelected || (active ? active.has(node.id) : importance >= 18);
+          return '<g class="node ' + (isSelected ? "active" : "") + ' ' + (isDimmed ? "dimmed" : "") + '" data-node="' + escapeHtml(node.id) + '">' +
+            '<title>' + escapeHtml(node.id) + '</title>' +
+            '<circle class="node-dot" cx="' + point.x + '" cy="' + point.y + '" r="' + r + '" />' +
+            '<circle class="node-hit" cx="' + point.x + '" cy="' + point.y + '" r="18" />' +
+            (showLabel ? '<text class="node-label" x="' + (point.x + 13) + '" y="' + (point.y - 2) + '">' + label + '</text>' +
+            '<text class="node-sub" x="' + (point.x + 13) + '" y="' + (point.y + 12) + '">' + meta + '</text>' : '') +
+          '</g>';
         }).join("");
-        svg.setAttribute("viewBox", "0 0 " + width + " " + height);
+
+        svg.setAttribute("viewBox", (-state.transform.x) + " " + (-state.transform.y) + " " + (canvasWidth / state.transform.scale) + " " + (canvasHeight / state.transform.scale));
         svg.innerHTML = edgeMarkup + nodeMarkup;
+        document.querySelectorAll("[data-node]").forEach((node) => {
+          node.addEventListener("click", () => selectFile(node.dataset.node));
+        });
       }
 
       function renderFiles() {
+        $("visibleFiles").textContent = state.files.length + " shown";
         $("files").innerHTML = state.files.map((file) =>
-          '<div class="file"><button data-file="' + file.path + '">' + file.path +
-          '</button><span class="muted">' + file.symbols.length + ' symbols · ' +
-          file.imports.length + ' imports</span></div>'
+          '<button class="file ' + (file.path === state.selected ? "active" : "") + '" data-file="' + escapeHtml(file.path) + '">' +
+            '<span class="file-name">' + escapeHtml(file.path) + '</span>' +
+            '<span class="file-meta">' + file.symbols.length + ' symbols · ' + file.imports.length + ' imports</span>' +
+          '</button>'
         ).join("");
         document.querySelectorAll("[data-file]").forEach((button) => {
-          button.addEventListener("click", () => loadImpact(button.dataset.file));
+          button.addEventListener("click", () => selectFile(button.dataset.file));
         });
+      }
+
+      async function selectFile(file) {
+        if (!file) return;
+        state.selected = file;
+        $("selectedFile").textContent = file;
+        renderFiles();
+        drawGraph();
+        const data = await request("/api/impact?file=" + encodeURIComponent(file));
+        $("details").textContent = JSON.stringify(data, null, 2);
       }
 
       async function loadIndex() {
@@ -338,7 +628,7 @@ export const renderStudioHtml = (): string => `<!doctype html>
         $("fileCount").textContent = data.stats.fileCount;
         $("symbolCount").textContent = data.stats.symbolCount;
         $("edgeCount").textContent = data.stats.edgeCount;
-        $("createdAt").textContent = "Indexed " + new Date(data.createdAt).toLocaleString();
+        $("createdAt").textContent = "Indexed " + new Date(data.createdAt).toLocaleString() + " · SQLite";
         renderFiles();
         drawGraph();
       }
@@ -346,20 +636,17 @@ export const renderStudioHtml = (): string => `<!doctype html>
       async function runSearch() {
         const query = $("query").value.trim();
         if (!query) return;
+        $("resultCount").textContent = "Searching";
         const data = await request("/api/search?q=" + encodeURIComponent(query));
+        $("resultCount").textContent = data.results.length + " results";
         $("results").innerHTML = data.results.map((result) =>
-          '<div class="result"><h3>' + result.symbol.name + '</h3><p><code>' +
-          result.symbol.file + ':' + result.symbol.startLine + '</code> <span class="muted">' +
-          result.symbol.kind + ' · score ' + result.score + '</span></p><p class="muted">' +
-          result.symbol.signature.replaceAll("<", "&lt;") + '</p></div>'
-        ).join("") || '<p class="muted">No symbols found.</p>';
+          '<div class="result"><h3>' + escapeHtml(result.symbol.name) + '</h3><p><code>' +
+          escapeHtml(result.symbol.file + ':' + result.symbol.startLine) + '</code> <span class="muted">' +
+          escapeHtml(result.symbol.kind + ' · score ' + result.score) + '</span></p><p class="muted">' +
+          escapeHtml(result.symbol.signature) + '</p></div>'
+        ).join("") || '<div class="empty">No symbols found.</div>';
         const context = await request("/api/context?q=" + encodeURIComponent(query));
         $("details").textContent = context.context;
-      }
-
-      async function loadImpact(file) {
-        const data = await request("/api/impact?file=" + encodeURIComponent(file));
-        $("details").textContent = JSON.stringify(data, null, 2);
       }
 
       $("search").addEventListener("click", runSearch);
@@ -367,10 +654,40 @@ export const renderStudioHtml = (): string => `<!doctype html>
         if (event.key === "Enter") runSearch();
       });
       $("sync").addEventListener("click", async () => {
-        $("createdAt").textContent = "Syncing...";
+        $("createdAt").textContent = "Syncing SQLite index...";
         await request("/api/sync", { method: "POST" });
         await loadIndex();
       });
+      $("zoomIn").addEventListener("click", () => {
+        state.transform.scale = Math.min(2.4, state.transform.scale * 1.18);
+        drawGraph();
+      });
+      $("zoomOut").addEventListener("click", () => {
+        state.transform.scale = Math.max(.55, state.transform.scale / 1.18);
+        drawGraph();
+      });
+      $("resetView").addEventListener("click", () => {
+        state.transform = { x: 0, y: 0, scale: 1 };
+        drawGraph();
+      });
+      $("graph").addEventListener("wheel", (event) => {
+        event.preventDefault();
+        state.transform.scale = Math.max(.55, Math.min(2.4, state.transform.scale * (event.deltaY > 0 ? .92 : 1.08)));
+        drawGraph();
+      }, { passive: false });
+
+      let dragStart = null;
+      $("graph").addEventListener("pointerdown", (event) => {
+        dragStart = { x: event.clientX, y: event.clientY, tx: state.transform.x, ty: state.transform.y };
+        $("graph").setPointerCapture(event.pointerId);
+      });
+      $("graph").addEventListener("pointermove", (event) => {
+        if (!dragStart) return;
+        state.transform.x = dragStart.tx - (event.clientX - dragStart.x) / state.transform.scale;
+        state.transform.y = dragStart.ty - (event.clientY - dragStart.y) / state.transform.scale;
+        drawGraph();
+      });
+      $("graph").addEventListener("pointerup", () => { dragStart = null; });
       window.addEventListener("resize", drawGraph);
       loadIndex().catch((error) => {
         $("details").textContent = error.message;

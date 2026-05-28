@@ -3,7 +3,7 @@ import pc from "picocolors";
 import { buildAgentContext } from "../intelligence/context.js";
 import { buildIntelligenceIndex } from "../intelligence/indexer.js";
 import { affectedFiles, impactForFile, searchIntelligence } from "../intelligence/query.js";
-import { getIntelligenceStorageStatus, readIntelligenceIndex } from "../intelligence/store.js";
+import { readIntelligenceIndex } from "../intelligence/store.js";
 import { syncIntelligenceIndex } from "../intelligence/sync.js";
 import { watchIntelligenceIndex } from "../intelligence/watcher.js";
 import { startStudioServer } from "../studio/server.js";
@@ -23,14 +23,13 @@ const loadOrBuildIndex = async (options: IntelligenceCommandOptions) => {
 
 export const runIndexCommand = async (options: IntelligenceCommandOptions): Promise<number> => {
   const index = await buildIntelligenceIndex(options);
-  const storage = await getIntelligenceStorageStatus(resolveCwd(options.cwd));
   process.stdout.write(
     [
       "",
       `  ${pc.bold("ship-clean intelligence index")}`,
       "",
       `  Indexed ${pc.bold(String(index.stats.fileCount))} files, ${pc.bold(String(index.stats.symbolCount))} symbols, ${pc.bold(String(index.stats.edgeCount))} imports`,
-      `  ${pc.dim(storage.backend === "sqlite" ? ".ship-clean/intelligence.sqlite" : ".ship-clean/intelligence.json")}`,
+      `  ${pc.dim(".ship-clean/intelligence.sqlite")}`,
       "",
     ].join("\n"),
   );
@@ -60,7 +59,7 @@ export const runSyncCommand = async (options: IntelligenceCommandOptions): Promi
       `  ${pc.bold("ship-clean sync")}`,
       "",
       `  Synced ${pc.bold(String(result.index.stats.fileCount))} files, ${pc.bold(String(result.index.stats.symbolCount))} symbols, ${pc.bold(String(result.index.stats.edgeCount))} imports in ${pc.bold(`${result.durationMs}ms`)}`,
-      `  storage: ${result.storage.backend}${result.storage.sqliteAvailable ? "" : pc.dim(" (SQLite native binding unavailable, using JSON fallback)")}`,
+      `  storage: ${result.storage.backend}`,
       "",
     ].join("\n"),
   );

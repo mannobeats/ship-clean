@@ -151,10 +151,9 @@ it current while code changes, and `ship-clean studio` opens a local web UI for
 the same data: file graph, symbol search, impact radius, and agent context.
 
 The durable target is `.ship-clean/intelligence.sqlite` with an FTS-ready schema
-for files, symbols, and imports. Ship Clean also writes `.ship-clean/intelligence.json`
-as a portable fallback so development remains usable when a machine has not yet
-approved native SQLite builds. Commands that need an index will build it
-automatically if it is missing.
+for files, symbols, and imports. SQLite is the required storage backend so local
+CLI commands, watch mode, and Studio always read from the same source of truth.
+Commands that need an index will build it automatically if it is missing.
 
 ## Presets
 

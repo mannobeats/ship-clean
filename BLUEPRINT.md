@@ -229,10 +229,9 @@ grep/read exploration. Ship Clean treats that index as a durable project brain:
 exposes the same graph through a local web UI for humans.
 
 The intended durable backend is `.ship-clean/intelligence.sqlite`, with tables
-for metadata, files, symbols, imports, and FTS-backed symbol search. Ship Clean
-also writes `.ship-clean/intelligence.json` as a portable fallback so development
-and CI remain usable on machines where native SQLite build scripts have not yet
-been approved. The command surface stays the same across both storage backends.
+for metadata, files, symbols, imports, and FTS-backed symbol search. SQLite is
+the required storage backend so local CLI commands, watch mode, and Studio always
+read from the same source of truth.
 
 ## 8. Config Model
 
@@ -590,7 +589,7 @@ This is not a disposable MVP. The first build is the **Foundation Release**: a p
 ### Project Brain And Studio
 
 - SQLite-backed project brain
-- JSON fallback for blocked native SQLite builds
+- Required SQLite storage with explicit install failure when native bindings are unavailable
 - Live watcher with debounced sync
 - Local Studio web UI
 - Import graph visualization
