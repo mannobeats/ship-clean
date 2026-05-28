@@ -1,0 +1,9 @@
+{
+  "name": "health-project",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "left-pad": "latest",
+    "unused-lib": "latest"
+  }
+}

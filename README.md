@@ -57,12 +57,33 @@ import { defineConfig } from "ship-clean";
 
 export default defineConfig({
   extends: ["ship-clean/recommended", "ship-clean/react"],
-  engines: {
-    biome: true,
-    typescript: true,
-    graph: true,
-    package: true,
-    policy: true,
+  lint: {
+    enabled: true,
+    engine: "biome",
+    preset: "strict",
+    format: true,
+    organizeImports: true,
+  },
+  typescript: {
+    enabled: true,
+  },
+  graph: {
+    enabled: true,
+    entrypoints: ["src/main.tsx"],
+    cycles: "error",
+    unusedFiles: "warn",
+    unusedExports: "warn",
+  },
+  package: {
+    enabled: true,
+    missingDependencies: "error",
+    unusedDependencies: "warn",
+    forbidden: ["moment"],
+  },
+  duplicates: {
+    enabled: true,
+    minLines: 8,
+    severity: "warn",
   },
   rules: [
     {

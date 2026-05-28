@@ -35,14 +35,34 @@ const mergeConfig = (
   base: ResolvedConfig,
   next: ShipCleanConfig | ShipCleanPreset,
 ): ResolvedConfig => ({
-  engines: {
-    ...base.engines,
-    ...(next.engines ?? {}),
+  agent: {
+    ...base.agent,
+    ...(next.agent ?? {}),
+  },
+  duplicates: {
+    ...base.duplicates,
+    ...(next.duplicates ?? {}),
   },
   exclude: [...base.exclude, ...(next.exclude ?? [])],
+  graph: {
+    ...base.graph,
+    ...(next.graph ?? {}),
+  },
   include: next.include ? [...base.include, ...next.include] : base.include,
+  lint: {
+    ...base.lint,
+    ...(next.lint ?? {}),
+  },
+  package: {
+    ...base.package,
+    ...(next.package ?? {}),
+  },
   presets: isPreset(next) ? [...base.presets, next.name] : base.presets,
   rules: [...base.rules, ...(next.rules ?? [])],
+  typescript: {
+    ...base.typescript,
+    ...(next.typescript ?? {}),
+  },
 });
 
 const resolvePreset = async (
@@ -67,11 +87,20 @@ const resolvePreset = async (
 export const resolveConfig = async (config: ShipCleanConfig): Promise<ResolvedConfig> => {
   let resolved: ResolvedConfig = {
     ...defaultConfig,
-    engines: { ...defaultConfig.engines },
+    agent: { ...defaultConfig.agent },
+    duplicates: {
+      ...defaultConfig.duplicates,
+      exclude: [...defaultConfig.duplicates.exclude],
+      files: [...defaultConfig.duplicates.files],
+    },
     exclude: [...defaultConfig.exclude],
+    graph: { ...defaultConfig.graph, entrypoints: [...defaultConfig.graph.entrypoints] },
     include: [...defaultConfig.include],
+    lint: { ...defaultConfig.lint },
+    package: { ...defaultConfig.package, forbidden: [...defaultConfig.package.forbidden] },
     presets: [],
     rules: [...defaultConfig.rules],
+    typescript: { ...defaultConfig.typescript },
   };
 
   for (const presetInput of normalizeArray(config.extends)) {

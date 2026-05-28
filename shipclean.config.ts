@@ -2,15 +2,25 @@ import { defineConfig } from "./src/config/define-config.js";
 
 export default defineConfig({
   extends: ["ship-clean/recommended"],
-  engines: {
-    biome: false,
-    graph: true,
-    package: true,
-    policy: true,
-    typescript: true,
+  lint: {
+    enabled: false,
+  },
+  graph: {
+    enabled: true,
+    cycles: "error",
+    unusedExports: "off",
+    unusedFiles: "off",
+  },
+  package: {
+    enabled: true,
+    missingDependencies: "error",
+    unusedDependencies: "off",
+  },
+  typescript: {
+    enabled: true,
   },
   include: ["src/**/*.{ts,tsx}", "test/**/*.ts"],
-  exclude: ["src/rules/presets/**", "src/output/index.ts"],
+  exclude: ["src/rules/presets/**", "src/output/index.ts", "test/fixtures/**"],
   rules: [
     {
       type: "grep",

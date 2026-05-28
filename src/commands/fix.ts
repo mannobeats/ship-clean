@@ -17,11 +17,11 @@ export const runFixCommand = async (options: FixCommandOptions): Promise<number>
   });
   let exitCode = 0;
 
-  if (config.engines.biome) {
+  if (config.lint.enabled && config.lint.engine === "biome") {
     exitCode = Math.max(exitCode, runBiomeFix(cwd));
   }
 
-  if (config.engines.oxlint) {
+  if (config.lint.enabled && config.lint.engine === "oxlint") {
     exitCode = Math.max(exitCode, runOxlintFix(cwd, options.unsafe ?? false));
   }
 

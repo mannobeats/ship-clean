@@ -93,39 +93,86 @@ export type ShipCleanRule =
   | MaxDependenciesRule
   | PackageDependencyRule;
 
-export interface EngineToggles {
-  agent?: boolean;
-  biome?: boolean;
-  graph?: boolean;
-  oxfmt?: boolean;
-  oxlint?: boolean;
-  package?: boolean;
-  policy?: boolean;
-  typescript?: boolean;
+export type SeveritySetting = Exclude<Severity, "info"> | "off";
+
+export interface LintConfig {
+  enabled?: boolean;
+  engine?: "biome" | "oxlint";
+  format?: boolean;
+  organizeImports?: boolean;
+  preset?: "recommended" | "strict" | "agent-safe";
+}
+
+export interface TypeScriptConfig {
+  enabled?: boolean;
+  mode?: "project" | "off";
+}
+
+export interface GraphConfig {
+  cycles?: SeveritySetting;
+  enabled?: boolean;
+  entrypoints?: string[];
+  unusedExports?: SeveritySetting;
+  unusedFiles?: SeveritySetting;
+}
+
+export interface DuplicateConfig {
+  enabled?: boolean;
+  exclude?: string[];
+  files?: string[];
+  minLines?: number;
+  severity?: SeveritySetting;
+}
+
+export interface PackageHealthConfig {
+  enabled?: boolean;
+  forbidden?: string[];
+  missingDependencies?: SeveritySetting;
+  unusedDependencies?: SeveritySetting;
+}
+
+export interface AgentConfig {
+  enabled?: boolean;
+  sync?: boolean;
 }
 
 export interface ShipCleanConfig {
-  engines?: EngineToggles;
+  agent?: AgentConfig;
+  duplicates?: DuplicateConfig;
   exclude?: string[];
   extends?: Array<PresetInput | string> | PresetInput | string;
+  graph?: GraphConfig;
   include?: string[];
+  lint?: LintConfig;
+  package?: PackageHealthConfig;
   rules?: ShipCleanRule[];
+  typescript?: TypeScriptConfig;
 }
 
 export interface ResolvedConfig {
-  engines: Required<EngineToggles>;
+  agent: Required<AgentConfig>;
+  duplicates: Required<DuplicateConfig>;
   exclude: string[];
+  graph: Required<GraphConfig>;
   include: string[];
+  lint: Required<LintConfig>;
+  package: Required<PackageHealthConfig>;
   presets: string[];
   rules: ShipCleanRule[];
+  typescript: Required<TypeScriptConfig>;
 }
 
 export interface ShipCleanPreset {
-  engines?: EngineToggles;
+  agent?: AgentConfig;
+  duplicates?: DuplicateConfig;
   exclude?: string[];
+  graph?: GraphConfig;
   include?: string[];
+  lint?: LintConfig;
   name: string;
+  package?: PackageHealthConfig;
   rules?: ShipCleanRule[];
+  typescript?: TypeScriptConfig;
 }
 
 export type PresetInput = ShipCleanPreset | ShipCleanConfig;

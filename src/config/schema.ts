@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 const severitySchema = z.enum(["error", "warn", "off"]);
+const severitySettingSchema = z.enum(["error", "warn", "off"]);
 const baseRuleSchema = z.object({
   message: z.string().min(1),
   name: z.string().regex(/^[a-z][a-z0-9-]*$/u),
@@ -95,33 +96,83 @@ export const ruleSchema = z.discriminatedUnion("type", [
   dependencyRuleSchema,
 ]);
 
-export const engineTogglesSchema = z
+const lintConfigSchema = z
   .object({
-    agent: z.boolean().optional(),
-    biome: z.boolean().optional(),
-    graph: z.boolean().optional(),
-    oxfmt: z.boolean().optional(),
-    oxlint: z.boolean().optional(),
-    package: z.boolean().optional(),
-    policy: z.boolean().optional(),
-    typescript: z.boolean().optional(),
+    enabled: z.boolean().optional(),
+    engine: z.enum(["biome", "oxlint"]).optional(),
+    format: z.boolean().optional(),
+    organizeImports: z.boolean().optional(),
+    preset: z.enum(["recommended", "strict", "agent-safe"]).optional(),
+  })
+  .strict();
+
+const typescriptConfigSchema = z
+  .object({
+    enabled: z.boolean().optional(),
+    mode: z.enum(["project", "off"]).optional(),
+  })
+  .strict();
+
+const graphConfigSchema = z
+  .object({
+    cycles: severitySettingSchema.optional(),
+    enabled: z.boolean().optional(),
+    entrypoints: z.array(z.string()).optional(),
+    unusedExports: severitySettingSchema.optional(),
+    unusedFiles: severitySettingSchema.optional(),
+  })
+  .strict();
+
+const duplicatesConfigSchema = z
+  .object({
+    enabled: z.boolean().optional(),
+    exclude: z.array(z.string()).optional(),
+    files: z.array(z.string()).optional(),
+    minLines: z.number().int().positive().optional(),
+    severity: severitySettingSchema.optional(),
+  })
+  .strict();
+
+const packageHealthConfigSchema = z
+  .object({
+    enabled: z.boolean().optional(),
+    forbidden: z.array(z.string()).optional(),
+    missingDependencies: severitySettingSchema.optional(),
+    unusedDependencies: severitySettingSchema.optional(),
+  })
+  .strict();
+
+const agentConfigSchema = z
+  .object({
+    enabled: z.boolean().optional(),
+    sync: z.boolean().optional(),
   })
   .strict();
 
 export const presetSchema = z.object({
-  engines: engineTogglesSchema.optional(),
+  agent: agentConfigSchema.optional(),
+  duplicates: duplicatesConfigSchema.optional(),
   exclude: z.array(z.string()).optional(),
+  graph: graphConfigSchema.optional(),
   include: z.array(z.string()).optional(),
+  lint: lintConfigSchema.optional(),
   name: z.string().min(1),
+  package: packageHealthConfigSchema.optional(),
   rules: z.array(ruleSchema).optional(),
+  typescript: typescriptConfigSchema.optional(),
 });
 
 const extendsInputSchema = z.union([z.string(), presetSchema, z.lazy(() => configSchema)]);
 
 export const configSchema: z.ZodType = z.object({
-  engines: engineTogglesSchema.optional(),
+  agent: agentConfigSchema.optional(),
+  duplicates: duplicatesConfigSchema.optional(),
   exclude: z.array(z.string()).optional(),
   extends: z.union([extendsInputSchema, z.array(extendsInputSchema)]).optional(),
+  graph: graphConfigSchema.optional(),
   include: z.array(z.string()).optional(),
+  lint: lintConfigSchema.optional(),
+  package: packageHealthConfigSchema.optional(),
   rules: z.array(ruleSchema).optional(),
+  typescript: typescriptConfigSchema.optional(),
 });

@@ -1,6 +1,9 @@
 import { runBiomeCheck } from "../adapters/biome.js";
 import { runOxlintCheck } from "../adapters/oxlint.js";
 import { runTypeScriptCheck } from "../adapters/typescript.js";
+import { runDuplicateDetection } from "../analyzers/duplicates.js";
+import { runGraphHealth } from "../analyzers/graph-health.js";
+import { runPackageHealth } from "../analyzers/package-health.js";
 import { loadShipCleanConfig } from "../config/loader.js";
 import { evaluateConfiguredRules } from "../rules/registry.js";
 import { createProjectContext } from "./project-context.js";
@@ -21,7 +24,7 @@ export const checkProject = async (options: CheckOptions = {}): Promise<CheckRes
   const context = await createProjectContext(options.cwd, config);
   const engines: EngineResult[] = [];
 
-  if (config.engines.policy || config.engines.graph || config.engines.package) {
+  if (config.rules.length > 0) {
     const engineStarted = performance.now();
     const findings = await evaluateConfiguredRules(context);
     engines.push({
@@ -36,15 +39,60 @@ export const checkProject = async (options: CheckOptions = {}): Promise<CheckRes
     });
   }
 
-  if (config.engines.biome) {
+  if (config.graph.enabled) {
+    const engineStarted = performance.now();
+    const findings = await runGraphHealth(context);
+    engines.push({
+      durationMs: performance.now() - engineStarted,
+      engine: "graph",
+      findings,
+      status: findings.some((finding) => finding.severity === "error")
+        ? "fail"
+        : findings.length > 0
+          ? "warn"
+          : "pass",
+    });
+  }
+
+  if (config.package.enabled) {
+    const engineStarted = performance.now();
+    const findings = await runPackageHealth(context);
+    engines.push({
+      durationMs: performance.now() - engineStarted,
+      engine: "package",
+      findings,
+      status: findings.some((finding) => finding.severity === "error")
+        ? "fail"
+        : findings.length > 0
+          ? "warn"
+          : "pass",
+    });
+  }
+
+  if (config.duplicates.enabled) {
+    const engineStarted = performance.now();
+    const findings = await runDuplicateDetection(context);
+    engines.push({
+      durationMs: performance.now() - engineStarted,
+      engine: "duplicates",
+      findings,
+      status: findings.some((finding) => finding.severity === "error")
+        ? "fail"
+        : findings.length > 0
+          ? "warn"
+          : "pass",
+    });
+  }
+
+  if (config.lint.enabled && config.lint.engine === "biome") {
     engines.push(await runBiomeCheck(context));
   }
 
-  if (config.engines.oxlint) {
+  if (config.lint.enabled && config.lint.engine === "oxlint") {
     engines.push(await runOxlintCheck(context));
   }
 
-  if (config.engines.typescript) {
+  if (config.typescript.enabled && config.typescript.mode !== "off") {
     engines.push(await runTypeScriptCheck(context));
   }
 

@@ -1,10 +1,15 @@
 {
-  "engines": {
-    "biome": false,
-    "graph": true,
-    "package": true,
-    "policy": true,
-    "typescript": false
+  "lint": {
+    "enabled": false
+  },
+  "typescript": {
+    "enabled": false
+  },
+  "graph": {
+    "enabled": false
+  },
+  "package": {
+    "enabled": false
   },
   "include": ["src/**/*.{ts,tsx}"],
   "rules": [

@@ -1,15 +1,20 @@
 import type { ResolvedConfig } from "../rules/types.js";
 
 export const defaultConfig: ResolvedConfig = {
-  engines: {
-    agent: true,
-    biome: false,
-    graph: true,
-    oxfmt: false,
-    oxlint: false,
-    package: true,
-    policy: true,
-    typescript: true,
+  agent: {
+    enabled: true,
+    sync: false,
+  },
+  duplicates: {
+    enabled: false,
+    exclude: [],
+    files: [
+      "src/**/*.{ts,tsx,js,jsx}",
+      "apps/*/src/**/*.{ts,tsx,js,jsx}",
+      "packages/*/src/**/*.{ts,tsx,js,jsx}",
+    ],
+    minLines: 8,
+    severity: "warn",
   },
   exclude: [
     "**/node_modules/**",
@@ -19,11 +24,35 @@ export const defaultConfig: ResolvedConfig = {
     "**/coverage/**",
     "**/*.d.ts",
   ],
+  graph: {
+    cycles: "error",
+    enabled: true,
+    entrypoints: [],
+    unusedExports: "warn",
+    unusedFiles: "warn",
+  },
   include: [
     "src/**/*.{ts,tsx,js,jsx}",
     "apps/*/src/**/*.{ts,tsx,js,jsx}",
     "packages/*/src/**/*.{ts,tsx,js,jsx}",
   ],
+  lint: {
+    enabled: true,
+    engine: "biome",
+    format: true,
+    organizeImports: true,
+    preset: "recommended",
+  },
+  package: {
+    enabled: true,
+    forbidden: [],
+    missingDependencies: "error",
+    unusedDependencies: "warn",
+  },
   presets: [],
   rules: [],
+  typescript: {
+    enabled: true,
+    mode: "project",
+  },
 };

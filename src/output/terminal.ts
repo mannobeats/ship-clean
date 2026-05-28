@@ -2,6 +2,9 @@ import pc from "picocolors";
 
 import type { CheckResult, Finding } from "../core/result.js";
 
+const plural = (count: number, singular: string, pluralValue = `${singular}s`): string =>
+  `${count} ${count === 1 ? singular : pluralValue}`;
+
 const formatFinding = (finding: Finding): string => {
   const location = finding.file
     ? `${finding.file}${finding.line ? `:${finding.line}` : ""}${finding.column ? `:${finding.column}` : ""}`
@@ -24,9 +27,9 @@ const formatFinding = (finding: Finding): string => {
 export const formatTerminal = (result: CheckResult): string => {
   const lines = [
     "",
-    `  ${pc.bold("ship-clean")} ${pc.dim("v1 result schema")}`,
+    `  ${pc.bold("ship-clean")} ${pc.dim("v0.1.0")}`,
     "",
-    `  Checked ${pc.bold(String(result.summary.filesScanned))} files with ${pc.bold(String(result.engines.length))} engines in ${pc.bold(`${Math.round(result.durationMs)}ms`)}`,
+    `  Checked ${pc.bold(plural(result.summary.filesScanned, "file"))} with ${pc.bold(plural(result.engines.length, "engine"))} in ${pc.bold(`${Math.round(result.durationMs)}ms`)}`,
     "",
   ];
 
@@ -38,7 +41,7 @@ export const formatTerminal = (result: CheckResult): string => {
           ? pc.dim("-")
           : pc.red("✗");
     lines.push(
-      `  ${icon} ${engine.engine.padEnd(12)} ${engine.findings.length} finding${engine.findings.length === 1 ? "" : "s"} ${pc.dim(`${Math.round(engine.durationMs)}ms`)}`,
+      `  ${icon} ${engine.engine.padEnd(12)} ${plural(engine.findings.length, "finding")} ${pc.dim(`${Math.round(engine.durationMs)}ms`)}`,
     );
   }
 
@@ -63,7 +66,7 @@ export const formatTerminal = (result: CheckResult): string => {
   const summaryColor =
     result.summary.errors > 0 ? pc.red : result.summary.warnings > 0 ? pc.yellow : pc.green;
   lines.push(
-    `  ${summaryColor(`${result.summary.errors} errors`)} · ${pc.yellow(`${result.summary.warnings} warnings`)} · ${result.summary.findings} findings`,
+    `  ${summaryColor(plural(result.summary.errors, "error"))} · ${pc.yellow(plural(result.summary.warnings, "warning", "warnings"))} · ${plural(result.summary.findings, "finding")}`,
   );
   lines.push("");
 

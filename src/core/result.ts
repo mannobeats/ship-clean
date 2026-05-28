@@ -5,6 +5,7 @@ export type EngineName =
   | "typescript"
   | "policy"
   | "graph"
+  | "duplicates"
   | "package"
   | "agent";
 
@@ -15,6 +16,7 @@ export type FindingSource =
   | "oxfmt"
   | "typescript"
   | "graph"
+  | "duplicates"
   | "package"
   | "agent";
 

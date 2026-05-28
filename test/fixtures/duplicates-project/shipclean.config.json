@@ -1,0 +1,20 @@
+{
+  "lint": {
+    "enabled": false
+  },
+  "typescript": {
+    "enabled": false
+  },
+  "graph": {
+    "enabled": false
+  },
+  "package": {
+    "enabled": false
+  },
+  "duplicates": {
+    "enabled": true,
+    "files": ["src/**/*.ts"],
+    "minLines": 4,
+    "severity": "warn"
+  }
+}

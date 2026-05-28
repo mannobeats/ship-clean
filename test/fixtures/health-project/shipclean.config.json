@@ -1,0 +1,21 @@
+{
+  "lint": {
+    "enabled": false
+  },
+  "typescript": {
+    "enabled": false
+  },
+  "graph": {
+    "enabled": true,
+    "entrypoints": ["src/main.ts"],
+    "cycles": "error",
+    "unusedFiles": "warn",
+    "unusedExports": "warn"
+  },
+  "package": {
+    "enabled": true,
+    "missingDependencies": "error",
+    "unusedDependencies": "warn",
+    "forbidden": ["left-pad"]
+  }
+}

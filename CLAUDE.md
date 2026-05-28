@@ -59,6 +59,7 @@ src/
 - **No default exports** except `src/cli.ts` if needed for the bin entry. Everything else uses named exports.
 - **Discriminated rule types.** Prefer `type: "boundary"` style rule configs over loose `options: Record<string, unknown>`.
 - **Stable JSON output.** The result schema is load-bearing for agents. Add fields, never remove or rename them.
+- **Intentional config only.** This is pre-release; do not add backward-compatibility branches unless explicitly requested.
 - **Adapters hide external tools.** Biome, Oxlint, TypeScript, and future engines must normalize into Ship Clean findings.
 - **Safe writes.** Any command that writes files must respect `--cwd`, refuse path traversal, and avoid writing outside the target project.
 - **Latest dependency plan.** Check `BLUEPRINT.md` Section 12 before adding dependencies. Use exact versions for the internal build unless intentionally changed.

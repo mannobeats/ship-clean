@@ -50,12 +50,31 @@ export const createStarterConfig = (): string => `import { defineConfig } from "
 
 export default defineConfig({
   extends: ["ship-clean/recommended"],
-  engines: {
-    biome: true,
-    typescript: true,
-    graph: true,
-    package: true,
-    policy: true,
+  lint: {
+    enabled: true,
+    engine: "biome",
+    preset: "recommended",
+    format: true,
+    organizeImports: true,
+  },
+  typescript: {
+    enabled: true,
+  },
+  graph: {
+    enabled: true,
+    cycles: "error",
+    unusedFiles: "warn",
+    unusedExports: "warn",
+  },
+  package: {
+    enabled: true,
+    missingDependencies: "error",
+    unusedDependencies: "warn",
+  },
+  duplicates: {
+    enabled: true,
+    minLines: 8,
+    severity: "warn",
   },
   rules: [
     {
