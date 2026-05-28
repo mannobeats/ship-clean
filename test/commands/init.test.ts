@@ -54,6 +54,20 @@ describe("init command", () => {
     expect(config).toContain('preset: "strict"');
     expect(config).toContain('"src/server.ts"');
 
+    const biomeConfig = await readFile(join(cwd, "biome.jsonc"), "utf8");
+    expect(biomeConfig).toContain('"noUnusedImports"');
+    expect(biomeConfig).toContain('"lineWidth": 80');
+
+    const agentRules = await readFile(join(cwd, "AGENTS.md"), "utf8");
+    expect(agentRules).toContain("Ship Clean Quality Loop");
+    expect(agentRules).toContain("ship-clean check --json");
+
+    const vscodeSettings = await readFile(join(cwd, ".vscode/settings.json"), "utf8");
+    expect(vscodeSettings).toContain("biomejs.biome");
+
+    const packageJson = await readFile(join(cwd, "package.json"), "utf8");
+    expect(packageJson).toContain('"ship-clean:check": "ship-clean check"');
+
     const loaded = await loadShipCleanConfig({ cwd });
     expect(loaded.lint.preset).toBe("strict");
     expect(loaded.graph.entrypoints).toContain("src/server.ts");

@@ -120,8 +120,11 @@ export const selectionFromFlags = (input: {
   return selection;
 };
 
+const renderStringArray = (items: string[]): string =>
+  `[${items.map((item) => JSON.stringify(item)).join(", ")}]`;
+
 export const renderConfig = (selection: InitSelection): string => `export default {
-  extends: ${JSON.stringify(selection.presets, null, 2).replace(/\n/g, "\n  ")},
+  extends: ${renderStringArray(selection.presets)},
   lint: {
     enabled: ${selection.lint.enabled},
     engine: "${selection.lint.engine}",
@@ -135,7 +138,7 @@ export const renderConfig = (selection: InitSelection): string => `export defaul
   },
   graph: {
     enabled: ${selection.graph.enabled},
-    entrypoints: ${JSON.stringify(selection.graph.entrypoints)},
+    entrypoints: ${renderStringArray(selection.graph.entrypoints)},
     cycles: "${selection.graph.cycles}",
     unusedFiles: "${selection.graph.unusedFiles}",
     unusedExports: "${selection.graph.unusedExports}",
@@ -144,7 +147,7 @@ export const renderConfig = (selection: InitSelection): string => `export defaul
     enabled: ${selection.package.enabled},
     missingDependencies: "${selection.package.missingDependencies}",
     unusedDependencies: "${selection.package.unusedDependencies}",
-    forbidden: ${JSON.stringify(selection.package.forbidden)},
+    forbidden: ${renderStringArray(selection.package.forbidden)},
   },
   duplicates: {
     enabled: ${selection.duplicates.enabled},

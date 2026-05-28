@@ -76,6 +76,8 @@ They should not need to separately install Biome, Oxlint, Knip, Fallow, dependen
 
 5. **Own the experience.** Underlying tools are implementation details. Users should think in terms of `ship-clean check`, `ship-clean fix`, and `shipclean.config.ts`.
 
+5a. **Source-of-truth config, generated adapters.** Ship Clean owns the quality contract. Native files such as `biome.jsonc`, editor settings, hooks, and agent instructions are generated adapter files that keep the rest of the ecosystem aligned.
+
 6. **Build a permanent foundation.** This project does not use a disposable MVP mindset. Early releases can be narrow, but the architecture must support the full v1 product.
 
 7. **Typed configuration.** Users define policy in `shipclean.config.ts` with TypeScript autocomplete and precise discriminated rule types.
@@ -204,6 +206,12 @@ ship-clean list --rules          List active rules
 ship-clean list --engines        List enabled engines
 ship-clean agents sync           Write/update AGENTS.md, CLAUDE.md, Cursor rules, etc.
 ```
+
+Current foundation behavior: `ship-clean init` writes `shipclean.config.ts`,
+materializes `biome.jsonc` for the selected lint preset, writes
+`.vscode/settings.json`, writes `AGENTS.md` when agent sync is enabled, and
+adds package scripts. This borrows the best setup ergonomics from preset-driven
+tools while keeping Ship Clean as the source of truth.
 
 ## 8. Config Model
 

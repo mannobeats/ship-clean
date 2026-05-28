@@ -53,6 +53,14 @@ ship-clean list
 strictness, owned quality systems, and agent setup. Use `--yes` for CI, test fixtures,
 or AI-agent setup where prompts are not appropriate.
 
+Init treats Ship Clean as the source of truth and wires the project around it:
+
+- `shipclean.config.ts` for the executable quality contract
+- `biome.jsonc` when Biome is the selected lint/format engine
+- `.vscode/settings.json` for format-on-save and code actions
+- `AGENTS.md` so AI agents run the Ship Clean quality loop
+- `package.json` scripts for `ship-clean:check`, `ship-clean:fix`, and `ship-clean:doctor`
+
 ## Configuration
 
 Create `shipclean.config.ts`:
@@ -108,6 +116,10 @@ export default {
   ],
 } satisfies import("ship-clean").ShipCleanConfig;
 ```
+
+Generated native tool configs are adapter files. For example, `biome.jsonc` is
+produced from the Ship Clean lint preset so humans, editors, CI, and agents use
+the same rules without each developer hand-rolling formatter settings.
 
 ## Presets
 

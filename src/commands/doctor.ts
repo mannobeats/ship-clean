@@ -11,18 +11,20 @@ export interface DoctorCommandOptions {
   cwd?: string | undefined;
 }
 
+type DoctorCheck = { detail: string; name: string; status: "fail" | "pass" | "warn" };
+
 export const runDoctorCommand = async (options: DoctorCommandOptions): Promise<number> => {
   const cwd = resolveCwd(options.cwd);
-  const checks: Array<{ detail: string; name: string; pass: boolean }> = [
+  const checks: DoctorCheck[] = [
     {
       detail: "Project metadata is required for package health checks.",
       name: "package.json",
-      pass: existsSync(join(cwd, "package.json")),
+      status: existsSync(join(cwd, "package.json")) ? "pass" : "fail",
     },
     {
       detail: "Configuration loads and validates.",
       name: "shipclean config",
-      pass: true,
+      status: "pass",
     },
   ];
   let configSummary = "";
@@ -37,18 +39,42 @@ export const runDoctorCommand = async (options: DoctorCommandOptions): Promise<n
       `duplicates: ${config.duplicates.enabled ? "on" : "off"}`,
       `rules: ${config.rules.length}`,
     ].join("\n");
+
+    if (config.lint.enabled && config.lint.engine === "biome") {
+      checks.push({
+        detail: "Ship Clean can materialize Biome rules for editor and CLI consistency.",
+        name: "biome.jsonc",
+        status: existsSync(join(cwd, "biome.jsonc")) ? "pass" : "warn",
+      });
+    }
+
+    if (config.agent.enabled && config.agent.sync) {
+      checks.push({
+        detail: "Agent instructions should point agents back to ship-clean check.",
+        name: "AGENTS.md",
+        status: existsSync(join(cwd, "AGENTS.md")) ? "pass" : "warn",
+      });
+    }
+
+    checks.push({
+      detail: "Editor format-on-save keeps humans and agents aligned while coding.",
+      name: ".vscode/settings.json",
+      status: existsSync(join(cwd, ".vscode/settings.json")) ? "pass" : "warn",
+    });
   } catch (error) {
     checks[1] = {
       detail: error instanceof Error ? error.message : "Configuration failed to load.",
       name: "shipclean config",
-      pass: false,
+      status: "fail",
     };
   }
 
   intro(pc.bold("ship-clean doctor"));
   for (const check of checks) {
-    if (check.pass) {
+    if (check.status === "pass") {
       log.success(`${check.name} ${pc.dim(check.detail)}`);
+    } else if (check.status === "warn") {
+      log.warn(`${check.name} ${pc.dim(check.detail)}`);
     } else {
       log.error(`${check.name} ${pc.dim(check.detail)}`);
     }
@@ -58,7 +84,7 @@ export const runDoctorCommand = async (options: DoctorCommandOptions): Promise<n
     note(configSummary, "Active quality systems");
   }
 
-  const ok = checks.every((check) => check.pass);
+  const ok = checks.every((check) => check.status !== "fail");
   outro(
     ok ? "Ship Clean is ready." : "Ship Clean needs attention before it can protect this project.",
   );

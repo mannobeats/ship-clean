@@ -10,6 +10,7 @@ import {
   spinner,
 } from "@clack/prompts";
 import pc from "picocolors";
+import { syncProjectWiring } from "../integrations/project-wiring.js";
 import { pathExists, writeProjectFile } from "../utils/fs.js";
 import { resolveCwd } from "../utils/paths.js";
 import { type InitSelection, renderConfig, selectionFromFlags } from "./init-config.js";
@@ -125,7 +126,17 @@ export const runInitCommand = async (options: InitCommandOptions): Promise<numbe
   const s = spinner();
   s.start("Writing Ship Clean configuration...");
   await writeProjectFile(cwd, target, renderConfig(selection));
-  s.stop(`Created ${target}`);
+  const wiring = await syncProjectWiring(cwd, selection);
+  s.stop(`Created ${target} and synced ${wiring.files.length} support files`);
+
+  note(
+    [
+      target,
+      ...wiring.files,
+      ...(wiring.packageScriptsUpdated ? ["package.json scripts"] : []),
+    ].join("\n"),
+    "Project wiring",
+  );
 
   outro("Ship Clean is ready. Run ship-clean check to start the quality loop.");
   return 0;
