@@ -205,6 +205,11 @@ ship-clean explain <rule>        Explain a rule with examples and repair guidanc
 ship-clean list --rules          List active rules
 ship-clean list --engines        List enabled engines
 ship-clean agents sync           Write/update AGENTS.md, CLAUDE.md, Cursor rules, etc.
+ship-clean index                 Build the local code-intelligence graph
+ship-clean search <symbol>       Search symbols without grepping/reading files
+ship-clean context <task>        Return compact agent-ready code context
+ship-clean impact <file>         Show imports, dependents, and symbols for a file
+ship-clean affected <files...>   Find files affected by changed files
 ```
 
 Current foundation behavior: `ship-clean init` writes `shipclean.config.ts`,
@@ -212,6 +217,13 @@ materializes `biome.jsonc` for the selected lint preset, writes
 `.vscode/settings.json`, writes `AGENTS.md` when agent sync is enabled, and
 adds package scripts. This borrows the best setup ergonomics from preset-driven
 tools while keeping Ship Clean as the source of truth.
+
+The code-intelligence layer is inspired by CodeGraph's proven agent workflow:
+build a local semantic index once, then let agents query symbols, related files,
+impact, and compact source snippets instead of spending tokens on broad
+grep/read exploration. The first Ship Clean foundation stores a TypeScript/JS
+symbol/import graph at `.ship-clean/intelligence.json`; the architecture can
+later move the same command surface to SQLite/FTS and MCP.
 
 ## 8. Config Model
 

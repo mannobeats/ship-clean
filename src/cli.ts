@@ -5,6 +5,13 @@ import { runExplainCommand } from "./commands/explain.js";
 import { runFixCommand } from "./commands/fix.js";
 import { runInitCommand } from "./commands/init.js";
 import { type InitSelection, projectTypes, strictnessLevels } from "./commands/init-config.js";
+import {
+  runAffectedCommand,
+  runContextCommand,
+  runImpactCommand,
+  runIndexCommand,
+  runSearchCommand,
+} from "./commands/intelligence.js";
 import { runListCommand } from "./commands/list.js";
 import type { OutputFormat } from "./output/index.js";
 
@@ -104,6 +111,11 @@ Usage:
   ship-clean doctor [--cwd <path>]
   ship-clean explain <rule>
   ship-clean list [--cwd <path>]
+  ship-clean index [--cwd <path>]
+  ship-clean search <query> [--cwd <path>] [--json]
+  ship-clean context <task> [--cwd <path>]
+  ship-clean impact <file> [--cwd <path>] [--json]
+  ship-clean affected <files...> [--cwd <path>] [--json]
 
 Init:
   --project       ${projectTypes.join(" | ")}
@@ -152,6 +164,25 @@ export const main = async (argv = process.argv.slice(2)): Promise<number> => {
       return runExplainCommand(parsed.positional[0] ?? "");
     case "list":
       return runListCommand({ cwd });
+    case "index":
+      return runIndexCommand({ configPath, cwd });
+    case "search":
+      return runSearchCommand(parsed.positional.join(" "), {
+        cwd,
+        json: booleanFlag(parsed.flags, "json") || parsed.flags.format === "json",
+      });
+    case "context":
+      return runContextCommand(parsed.positional.join(" "), { cwd });
+    case "impact":
+      return runImpactCommand(parsed.positional[0] ?? "", {
+        cwd,
+        json: booleanFlag(parsed.flags, "json") || parsed.flags.format === "json",
+      });
+    case "affected":
+      return runAffectedCommand(parsed.positional, {
+        cwd,
+        json: booleanFlag(parsed.flags, "json") || parsed.flags.format === "json",
+      });
     case "help":
     case "--help":
     case "-h":

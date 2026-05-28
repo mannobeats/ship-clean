@@ -47,6 +47,11 @@ ship-clean init --yes --project next --strictness agent-safe
 ship-clean doctor
 ship-clean explain boundary
 ship-clean list
+ship-clean index
+ship-clean search AuthService
+ship-clean context "How does authentication create a session?"
+ship-clean impact src/auth/session.ts
+ship-clean affected src/auth/session.ts
 ```
 
 `ship-clean init` is interactive and uses a polished terminal flow for project type,
@@ -120,6 +125,23 @@ export default {
 Generated native tool configs are adapter files. For example, `biome.jsonc` is
 produced from the Ship Clean lint preset so humans, editors, CI, and agents use
 the same rules without each developer hand-rolling formatter settings.
+
+## Code Intelligence
+
+Ship Clean includes a local code-intelligence index for agents. It builds a compact
+symbol/import graph so agents can ask focused questions without repeatedly reading
+and grepping the whole repository:
+
+```bash
+ship-clean index
+ship-clean search createSession
+ship-clean context "How does session creation work?"
+ship-clean impact src/auth/session.ts
+ship-clean affected src/auth/session.ts
+```
+
+The index is stored at `.ship-clean/intelligence.json`. Commands that need it will
+build it automatically if it is missing.
 
 ## Presets
 
