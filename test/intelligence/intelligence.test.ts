@@ -8,6 +8,8 @@ import { main } from "../../src/cli.js";
 import { buildAgentContext } from "../../src/intelligence/context.js";
 import { buildIntelligenceIndex } from "../../src/intelligence/indexer.js";
 import { affectedFiles, impactForFile, searchIntelligence } from "../../src/intelligence/query.js";
+import { readIntelligenceIndex } from "../../src/intelligence/store.js";
+import { renderStudioHtml, startStudioServer } from "../../src/studio/server.js";
 
 const tempDirs: string[] = [];
 
@@ -75,6 +77,9 @@ describe("code intelligence", () => {
       await readFile(join(cwd, ".ship-clean/intelligence.json"), "utf8"),
     );
     expect(persisted.stats.fileCount).toBe(3);
+    await expect(readIntelligenceIndex(cwd)).resolves.toMatchObject({
+      stats: { fileCount: 3 },
+    });
 
     const results = searchIntelligence(index, "createSession");
     expect(results[0]?.symbol.name).toBe("createSession");
@@ -99,6 +104,7 @@ describe("code intelligence", () => {
     const stdout = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
 
     await expect(main(["index", "--cwd", cwd])).resolves.toBe(0);
+    await expect(main(["sync", "--cwd", cwd, "--json"])).resolves.toBe(0);
     await expect(main(["search", "createSession", "--cwd", cwd])).resolves.toBe(0);
     await expect(main(["context", "createSession login", "--cwd", cwd])).resolves.toBe(0);
     await expect(main(["impact", "src/session.ts", "--cwd", cwd, "--json"])).resolves.toBe(0);
@@ -106,7 +112,58 @@ describe("code intelligence", () => {
 
     const output = stdout.mock.calls.map((call) => String(call[0])).join("");
     expect(output).toContain("ship-clean intelligence index");
+    expect(output).toContain("storage");
     expect(output).toContain("createSession");
     expect(output).toContain("src/auth.ts");
+  });
+
+  it("updates the index through sync after source changes", async () => {
+    const cwd = await makeProject();
+    await buildIntelligenceIndex({ cwd });
+    await writeFile(
+      join(cwd, "src/profile.ts"),
+      [
+        'import { createSession } from "./session";',
+        "",
+        "export function createProfileSession(userId: string) {",
+        "  return createSession(userId);",
+        "}",
+      ].join("\n"),
+    );
+
+    await expect(main(["sync", "--cwd", cwd])).resolves.toBe(0);
+    const index = await readIntelligenceIndex(cwd);
+    const searchableIndex = index ?? {
+      createdAt: "",
+      files: [],
+      schemaVersion: 1,
+      stats: { edgeCount: 0, fileCount: 0, symbolCount: 0 },
+    };
+
+    expect(index).not.toBeNull();
+    expect(index?.stats.fileCount).toBe(4);
+    expect(searchIntelligence(searchableIndex, "createProfileSession")[0]?.symbol.file).toBe(
+      "src/profile.ts",
+    );
+  });
+
+  it("serves the local studio UI and graph API", async () => {
+    const cwd = await makeProject();
+    expect(renderStudioHtml()).toContain("Ship Clean Studio");
+
+    const server = await startStudioServer({ cwd, port: 0 });
+    try {
+      const response = await fetch(`${server.url}/api/index`);
+      const body = (await response.json()) as {
+        graph: { nodes: unknown[] };
+        stats: { fileCount: number };
+      };
+
+      expect(response.ok).toBe(true);
+      expect(body.stats.fileCount).toBe(3);
+      expect(body.graph.nodes.length).toBe(3);
+    } finally {
+      await server.close();
+    }
   });
 });

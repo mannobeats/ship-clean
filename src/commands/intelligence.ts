@@ -3,13 +3,17 @@ import pc from "picocolors";
 import { buildAgentContext } from "../intelligence/context.js";
 import { buildIntelligenceIndex } from "../intelligence/indexer.js";
 import { affectedFiles, impactForFile, searchIntelligence } from "../intelligence/query.js";
-import { readIntelligenceIndex } from "../intelligence/store.js";
+import { getIntelligenceStorageStatus, readIntelligenceIndex } from "../intelligence/store.js";
+import { syncIntelligenceIndex } from "../intelligence/sync.js";
+import { watchIntelligenceIndex } from "../intelligence/watcher.js";
+import { startStudioServer } from "../studio/server.js";
 import { resolveCwd } from "../utils/paths.js";
 
 export interface IntelligenceCommandOptions {
   configPath?: string | undefined;
   cwd?: string | undefined;
   json?: boolean;
+  port?: number | undefined;
 }
 
 const loadOrBuildIndex = async (options: IntelligenceCommandOptions) => {
@@ -19,16 +23,81 @@ const loadOrBuildIndex = async (options: IntelligenceCommandOptions) => {
 
 export const runIndexCommand = async (options: IntelligenceCommandOptions): Promise<number> => {
   const index = await buildIntelligenceIndex(options);
+  const storage = await getIntelligenceStorageStatus(resolveCwd(options.cwd));
   process.stdout.write(
     [
       "",
       `  ${pc.bold("ship-clean intelligence index")}`,
       "",
       `  Indexed ${pc.bold(String(index.stats.fileCount))} files, ${pc.bold(String(index.stats.symbolCount))} symbols, ${pc.bold(String(index.stats.edgeCount))} imports`,
-      `  ${pc.dim(".ship-clean/intelligence.json")}`,
+      `  ${pc.dim(storage.backend === "sqlite" ? ".ship-clean/intelligence.sqlite" : ".ship-clean/intelligence.json")}`,
       "",
     ].join("\n"),
   );
+  return 0;
+};
+
+export const runSyncCommand = async (options: IntelligenceCommandOptions): Promise<number> => {
+  const result = await syncIntelligenceIndex(options);
+  if (options.json) {
+    process.stdout.write(
+      `${JSON.stringify(
+        {
+          durationMs: result.durationMs,
+          stats: result.index.stats,
+          storage: result.storage,
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    return 0;
+  }
+
+  process.stdout.write(
+    [
+      "",
+      `  ${pc.bold("ship-clean sync")}`,
+      "",
+      `  Synced ${pc.bold(String(result.index.stats.fileCount))} files, ${pc.bold(String(result.index.stats.symbolCount))} symbols, ${pc.bold(String(result.index.stats.edgeCount))} imports in ${pc.bold(`${result.durationMs}ms`)}`,
+      `  storage: ${result.storage.backend}${result.storage.sqliteAvailable ? "" : pc.dim(" (SQLite native binding unavailable, using JSON fallback)")}`,
+      "",
+    ].join("\n"),
+  );
+  return 0;
+};
+
+export const runWatchCommand = async (options: IntelligenceCommandOptions): Promise<number> => {
+  process.stdout.write(`\n  ${pc.bold("ship-clean watch")} ${pc.dim("press Ctrl-C to stop")}\n\n`);
+  const controller = await watchIntelligenceIndex(options);
+  await controller.ready;
+
+  await new Promise<void>((resolve) => {
+    const stop = (): void => {
+      process.off("SIGINT", stop);
+      process.off("SIGTERM", stop);
+      resolve();
+    };
+    process.once("SIGINT", stop);
+    process.once("SIGTERM", stop);
+  });
+
+  await controller.close();
+  return 0;
+};
+
+export const runStudioCommand = async (options: IntelligenceCommandOptions): Promise<number> => {
+  const server = await startStudioServer(options);
+  await new Promise<void>((resolve) => {
+    const stop = (): void => {
+      process.off("SIGINT", stop);
+      process.off("SIGTERM", stop);
+      resolve();
+    };
+    process.once("SIGINT", stop);
+    process.once("SIGTERM", stop);
+  });
+  await server.close();
   return 0;
 };
 

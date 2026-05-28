@@ -206,6 +206,9 @@ ship-clean list --rules          List active rules
 ship-clean list --engines        List enabled engines
 ship-clean agents sync           Write/update AGENTS.md, CLAUDE.md, Cursor rules, etc.
 ship-clean index                 Build the local code-intelligence graph
+ship-clean sync                  Refresh the durable project brain
+ship-clean watch                 Keep the project brain current during development
+ship-clean studio                Launch the local project-brain UI
 ship-clean search <symbol>       Search symbols without grepping/reading files
 ship-clean context <task>        Return compact agent-ready code context
 ship-clean impact <file>         Show imports, dependents, and symbols for a file
@@ -221,9 +224,15 @@ tools while keeping Ship Clean as the source of truth.
 The code-intelligence layer is inspired by CodeGraph's proven agent workflow:
 build a local semantic index once, then let agents query symbols, related files,
 impact, and compact source snippets instead of spending tokens on broad
-grep/read exploration. The first Ship Clean foundation stores a TypeScript/JS
-symbol/import graph at `.ship-clean/intelligence.json`; the architecture can
-later move the same command surface to SQLite/FTS and MCP.
+grep/read exploration. Ship Clean treats that index as a durable project brain:
+`sync` refreshes it, `watch` keeps it current as files change, and `studio`
+exposes the same graph through a local web UI for humans.
+
+The intended durable backend is `.ship-clean/intelligence.sqlite`, with tables
+for metadata, files, symbols, imports, and FTS-backed symbol search. Ship Clean
+also writes `.ship-clean/intelligence.json` as a portable fallback so development
+and CI remain usable on machines where native SQLite build scripts have not yet
+been approved. The command surface stays the same across both storage backends.
 
 ## 8. Config Model
 
@@ -439,6 +448,8 @@ Versions below were checked from npm on 2026-05-27 with `npm view <package> vers
 | `yaml` | `2.9.0` | Workspace and hook config parsing |
 | `cross-spawn` | `7.0.6` | Reliable child process execution |
 | `nypm` | `0.6.6` | Package manager detection and install commands |
+| `better-sqlite3` | `12.10.0` | Durable local project-brain storage |
+| `chokidar` | `5.0.0` | File watching for live intelligence sync |
 
 ### Development Dependencies
 
@@ -454,7 +465,8 @@ Versions below were checked from npm on 2026-05-27 with `npm view <package> vers
 - Keep external tools behind adapters. No external tool schema should leak into Ship Clean's public JSON contract.
 - Prefer exact versions for the internal private package.
 - Revisit `c12` before public release because the current latest tag is beta. If that remains true near publication, either pin it deliberately or use a stable config loader.
-- Do not add heavy UI/runtime dependencies. This is a CLI, not an interactive React app.
+- Do not add heavy UI/runtime dependencies. Studio is served by the CLI and should
+  remain local, fast, and dependency-light.
 
 ## 13. Internal Development And Testing
 
@@ -469,6 +481,8 @@ pnpm lint
 pnpm ship-clean check --cwd .
 pnpm ship-clean check --cwd ../veedeyo
 pnpm ship-clean fix --cwd ../veedeyo
+pnpm ship-clean sync --cwd .
+pnpm ship-clean studio --cwd .
 ```
 
 Fixture projects should live under:
@@ -572,6 +586,17 @@ This is not a disposable MVP. The first build is the **Foundation Release**: a p
 - `ship-clean agents sync`
 - Rule docs generation
 - `ship-clean learn` prototype that proposes rules from repo patterns and agent docs
+
+### Project Brain And Studio
+
+- SQLite-backed project brain
+- JSON fallback for blocked native SQLite builds
+- Live watcher with debounced sync
+- Local Studio web UI
+- Import graph visualization
+- Symbol search and compact agent context
+- Impact and affected-file exploration
+- Future MCP server over the same storage/query layer
 
 ## 16. Success Criteria
 

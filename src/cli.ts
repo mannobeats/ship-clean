@@ -11,6 +11,9 @@ import {
   runImpactCommand,
   runIndexCommand,
   runSearchCommand,
+  runStudioCommand,
+  runSyncCommand,
+  runWatchCommand,
 } from "./commands/intelligence.js";
 import { runListCommand } from "./commands/list.js";
 import type { OutputFormat } from "./output/index.js";
@@ -71,6 +74,18 @@ const stringFlag = (flags: Record<string, string | boolean>, name: string): stri
 const booleanFlag = (flags: Record<string, string | boolean>, name: string): boolean =>
   flags[name] === true || flags[name] === "true";
 
+const numberFlag = (flags: Record<string, string | boolean>, name: string): number | undefined => {
+  const value = stringFlag(flags, name);
+  if (!value) {
+    return undefined;
+  }
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new Error(`Invalid --${name} value "${value}". Expected a positive integer.`);
+  }
+  return parsed;
+};
+
 const projectTypeFlag = (
   flags: Record<string, string | boolean>,
 ): InitSelection["projectType"] | undefined => {
@@ -112,6 +127,9 @@ Usage:
   ship-clean explain <rule>
   ship-clean list [--cwd <path>]
   ship-clean index [--cwd <path>]
+  ship-clean sync [--cwd <path>] [--json]
+  ship-clean watch [--cwd <path>]
+  ship-clean studio [--cwd <path>] [--port <number>]
   ship-clean search <query> [--cwd <path>] [--json]
   ship-clean context <task> [--cwd <path>]
   ship-clean impact <file> [--cwd <path>] [--json]
@@ -166,6 +184,16 @@ export const main = async (argv = process.argv.slice(2)): Promise<number> => {
       return runListCommand({ cwd });
     case "index":
       return runIndexCommand({ configPath, cwd });
+    case "sync":
+      return runSyncCommand({
+        configPath,
+        cwd,
+        json: booleanFlag(parsed.flags, "json") || parsed.flags.format === "json",
+      });
+    case "watch":
+      return runWatchCommand({ configPath, cwd });
+    case "studio":
+      return runStudioCommand({ configPath, cwd, port: numberFlag(parsed.flags, "port") });
     case "search":
       return runSearchCommand(parsed.positional.join(" "), {
         cwd,

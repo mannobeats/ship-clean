@@ -52,7 +52,9 @@
   "dependencies": {
     "@biomejs/biome": "2.4.16",
     "@clack/prompts": "1.4.0",
+    "better-sqlite3": "12.10.0",
     "c12": "4.0.0-beta.5",
+    "chokidar": "5.0.0",
     "citty": "0.2.2",
     "cross-spawn": "7.0.6",
     "es-module-lexer": "2.1.0",
@@ -67,11 +69,12 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "7.6.13",
     "@types/cross-spawn": "6.0.6",
     "@types/node": "25.9.1",
     "fast-check": "4.8.0",
-    "tsx": "4.22.3",
     "tsup": "8.5.1",
+    "tsx": "4.22.3",
     "vitest": "4.1.7"
   },
   "packageManager": "pnpm@10.22.0"

@@ -48,6 +48,9 @@ ship-clean doctor
 ship-clean explain boundary
 ship-clean list
 ship-clean index
+ship-clean sync
+ship-clean watch
+ship-clean studio
 ship-clean search AuthService
 ship-clean context "How does authentication create a session?"
 ship-clean impact src/auth/session.ts
@@ -134,14 +137,24 @@ and grepping the whole repository:
 
 ```bash
 ship-clean index
+ship-clean sync
+ship-clean watch
+ship-clean studio
 ship-clean search createSession
 ship-clean context "How does session creation work?"
 ship-clean impact src/auth/session.ts
 ship-clean affected src/auth/session.ts
 ```
 
-The index is stored at `.ship-clean/intelligence.json`. Commands that need it will
-build it automatically if it is missing.
+`ship-clean sync` refreshes the project brain on demand, `ship-clean watch` keeps
+it current while code changes, and `ship-clean studio` opens a local web UI for
+the same data: file graph, symbol search, impact radius, and agent context.
+
+The durable target is `.ship-clean/intelligence.sqlite` with an FTS-ready schema
+for files, symbols, and imports. Ship Clean also writes `.ship-clean/intelligence.json`
+as a portable fallback so development remains usable when a machine has not yet
+approved native SQLite builds. Commands that need an index will build it
+automatically if it is missing.
 
 ## Presets
 
@@ -186,6 +199,8 @@ pnpm dev init --cwd /tmp/ship-clean-demo --yes --project next --strictness agent
 pnpm dev doctor --cwd test/fixtures/health-project
 pnpm dev list --cwd test/fixtures/health-project
 pnpm dev check --cwd test/fixtures/dirty-project
+pnpm dev sync --cwd .
+pnpm dev studio --cwd .
 ```
 
 After a build, test the bundled binary exactly as a consuming project will use it:
