@@ -4,6 +4,7 @@ import { runDoctorCommand } from "./commands/doctor.js";
 import { runExplainCommand } from "./commands/explain.js";
 import { runFixCommand } from "./commands/fix.js";
 import { runInitCommand } from "./commands/init.js";
+import { type InitSelection, projectTypes, strictnessLevels } from "./commands/init-config.js";
 import { runListCommand } from "./commands/list.js";
 import type { OutputFormat } from "./output/index.js";
 
@@ -63,16 +64,51 @@ const stringFlag = (flags: Record<string, string | boolean>, name: string): stri
 const booleanFlag = (flags: Record<string, string | boolean>, name: string): boolean =>
   flags[name] === true || flags[name] === "true";
 
+const projectTypeFlag = (
+  flags: Record<string, string | boolean>,
+): InitSelection["projectType"] | undefined => {
+  const value = stringFlag(flags, "project");
+  if (!value) {
+    return undefined;
+  }
+  if (projectTypes.includes(value as InitSelection["projectType"])) {
+    return value as InitSelection["projectType"];
+  }
+  throw new Error(
+    `Invalid --project value "${value}". Expected one of: ${projectTypes.join(", ")}`,
+  );
+};
+
+const strictnessFlag = (
+  flags: Record<string, string | boolean>,
+): InitSelection["strictness"] | undefined => {
+  const value = stringFlag(flags, "strictness");
+  if (!value) {
+    return undefined;
+  }
+  if (strictnessLevels.includes(value as InitSelection["strictness"])) {
+    return value as InitSelection["strictness"];
+  }
+  throw new Error(
+    `Invalid --strictness value "${value}". Expected one of: ${strictnessLevels.join(", ")}`,
+  );
+};
+
 const printHelp = (): void => {
   process.stdout.write(`ship-clean
 
 Usage:
   ship-clean check [--cwd <path>] [--json]
   ship-clean fix [--cwd <path>] [--unsafe]
-  ship-clean init [--cwd <path>] [--force]
+  ship-clean init [--cwd <path>] [--force] [--yes] [--project <type>] [--strictness <level>]
   ship-clean doctor [--cwd <path>]
   ship-clean explain <rule>
   ship-clean list [--cwd <path>]
+
+Init:
+  --project       ${projectTypes.join(" | ")}
+  --strictness    ${strictnessLevels.join(" | ")}
+  --yes           Generate default config without prompts
 
 `);
 };
@@ -98,11 +134,18 @@ export const main = async (argv = process.argv.slice(2)): Promise<number> => {
         cwd,
         unsafe: booleanFlag(parsed.flags, "unsafe"),
       });
-    case "init":
+    case "init": {
+      const projectType = projectTypeFlag(parsed.flags);
+      const strictness = strictnessFlag(parsed.flags);
       return runInitCommand({
         cwd,
         force: booleanFlag(parsed.flags, "force"),
+        nonInteractive:
+          booleanFlag(parsed.flags, "yes") || booleanFlag(parsed.flags, "non-interactive"),
+        ...(projectType ? { projectType } : {}),
+        ...(strictness ? { strictness } : {}),
       });
+    }
     case "doctor":
       return runDoctorCommand({ cwd });
     case "explain":

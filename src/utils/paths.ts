@@ -22,16 +22,17 @@ export const isInsidePath = (target: string, root: string): boolean => {
 };
 
 export const assertSafeProjectWrite = (cwd: string, target: string): void => {
-  const projectRoot = realPathOrResolved(cwd);
+  const resolvedRoot = resolve(cwd);
+  const projectRoot = realPathOrResolved(resolvedRoot);
   const absoluteTarget = resolve(cwd, target);
 
-  if (!isInsidePath(absoluteTarget, projectRoot)) {
+  if (!isInsidePath(absoluteTarget, resolvedRoot)) {
     throw new Error(`Refusing to write outside project: ${target}`);
   }
 
   const parentPath = dirname(absoluteTarget);
   const realParentPath = realPathOrResolved(parentPath);
-  if (!isInsidePath(realParentPath, projectRoot)) {
+  if (!isInsidePath(realParentPath, projectRoot) && !isInsidePath(realParentPath, resolvedRoot)) {
     throw new Error(`Refusing to write through directory outside project: ${target}`);
   }
 

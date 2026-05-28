@@ -43,19 +43,22 @@ ship-clean check --json
 ship-clean check --cwd ../another-project
 ship-clean fix
 ship-clean init
+ship-clean init --yes --project next --strictness agent-safe
 ship-clean doctor
 ship-clean explain boundary
 ship-clean list
 ```
+
+`ship-clean init` is interactive and uses a polished terminal flow for project type,
+strictness, owned quality systems, and agent setup. Use `--yes` for CI, test fixtures,
+or AI-agent setup where prompts are not appropriate.
 
 ## Configuration
 
 Create `shipclean.config.ts`:
 
 ```ts
-import { defineConfig } from "ship-clean";
-
-export default defineConfig({
+export default {
   extends: ["ship-clean/recommended", "ship-clean/react"],
   lint: {
     enabled: true,
@@ -103,7 +106,7 @@ export default defineConfig({
       message: "Components should have colocated tests.",
     },
   ],
-});
+} satisfies import("ship-clean").ShipCleanConfig;
 ```
 
 ## Presets
@@ -113,9 +116,9 @@ Ship Clean supports first-party, team, and future marketplace presets:
 ```ts
 import mannobeats from "@mannobeats/ship-clean-preset";
 
-export default defineConfig({
+export default {
   extends: ["ship-clean/recommended", "ship-clean/react", mannobeats],
-});
+} satisfies import("ship-clean").ShipCleanConfig;
 ```
 
 Resolution order is intentional:
@@ -139,6 +142,23 @@ Use `--cwd` to test against real private projects without publishing:
 
 ```bash
 pnpm ship-clean check --cwd ../veedeyo
+```
+
+Run the CLI directly in development mode while you are shaping the experience:
+
+```bash
+pnpm dev init --cwd /tmp/ship-clean-demo
+pnpm dev init --cwd /tmp/ship-clean-demo --yes --project next --strictness agent-safe --force
+pnpm dev doctor --cwd test/fixtures/health-project
+pnpm dev list --cwd test/fixtures/health-project
+pnpm dev check --cwd test/fixtures/dirty-project
+```
+
+After a build, test the bundled binary exactly as a consuming project will use it:
+
+```bash
+pnpm build
+node dist/cli.js check --cwd test/fixtures/dirty-project
 ```
 
 ## Current Status

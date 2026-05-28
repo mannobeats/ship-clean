@@ -3,6 +3,7 @@ import { join } from "node:path";
 
 import { loadConfig } from "c12";
 
+import { renderConfig } from "../commands/init-config.js";
 import type { ResolvedConfig, ShipCleanConfig } from "../rules/types.js";
 import { readJsonFile } from "../utils/fs.js";
 import { resolveConfig } from "./resolve.js";
@@ -12,6 +13,25 @@ export interface LoadShipCleanConfigOptions {
   configPath?: string | undefined;
   cwd: string;
 }
+
+const resolveConfigModule = (module: unknown): unknown => {
+  if (
+    module &&
+    typeof module === "object" &&
+    "default" in module &&
+    module.default &&
+    typeof module.default === "object" &&
+    "default" in module.default
+  ) {
+    return module.default.default;
+  }
+
+  if (module && typeof module === "object" && "default" in module) {
+    return module.default;
+  }
+
+  return module;
+};
 
 export const loadShipCleanConfig = async (
   options: LoadShipCleanConfigOptions,
@@ -33,8 +53,10 @@ export const loadShipCleanConfig = async (
     ...(options.configPath ? { configFile: options.configPath } : {}),
     cwd: options.cwd,
     extend: false,
+    import: (id) => import(id),
     name: "shipclean",
     packageJson: true,
+    resolveModule: resolveConfigModule,
   });
 
   const rawConfig = result.config ?? {};
@@ -46,48 +68,44 @@ export const loadShipCleanConfig = async (
   return resolveConfig(parsed.data as ShipCleanConfig);
 };
 
-export const createStarterConfig = (): string => `import { defineConfig } from "ship-clean";
-
-export default defineConfig({
-  extends: ["ship-clean/recommended"],
-  lint: {
-    enabled: true,
-    engine: "biome",
-    preset: "recommended",
-    format: true,
-    organizeImports: true,
-  },
-  typescript: {
-    enabled: true,
-  },
-  graph: {
-    enabled: true,
-    cycles: "error",
-    unusedFiles: "warn",
-    unusedExports: "warn",
-  },
-  package: {
-    enabled: true,
-    missingDependencies: "error",
-    unusedDependencies: "warn",
-  },
-  duplicates: {
-    enabled: true,
-    minLines: 8,
-    severity: "warn",
-  },
-  rules: [
-    {
-      type: "file-pattern",
-      name: "no-barrels",
-      files: ["src/**/index.ts"],
-      exclude: ["src/index.ts"],
-      expect: "absent",
-      severity: "warn",
-      message: "Avoid barrel files; import directly from source modules.",
+export const createStarterConfig = (): string =>
+  renderConfig({
+    agent: {
+      enabled: true,
+      sync: true,
     },
-  ],
-});
-`;
+    duplicates: {
+      enabled: true,
+      minLines: 8,
+      severity: "warn",
+    },
+    graph: {
+      cycles: "error",
+      enabled: true,
+      entrypoints: [],
+      unusedExports: "warn",
+      unusedFiles: "warn",
+    },
+    lint: {
+      enabled: true,
+      engine: "biome",
+      format: true,
+      organizeImports: true,
+      preset: "strict",
+    },
+    package: {
+      enabled: true,
+      forbidden: ["moment"],
+      missingDependencies: "error",
+      unusedDependencies: "warn",
+    },
+    presets: ["ship-clean/recommended"],
+    projectType: "react",
+    strictness: "strict",
+    typescript: {
+      enabled: true,
+      mode: "project",
+    },
+  });
 
 export const defaultConfigPath = (cwd: string): string => join(cwd, "shipclean.config.ts");

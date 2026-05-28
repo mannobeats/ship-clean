@@ -1,6 +1,9 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
+import { intro, log, note, outro } from "@clack/prompts";
+import pc from "picocolors";
+
 import { loadShipCleanConfig } from "../config/loader.js";
 import { resolveCwd } from "../utils/paths.js";
 
@@ -10,20 +13,54 @@ export interface DoctorCommandOptions {
 
 export const runDoctorCommand = async (options: DoctorCommandOptions): Promise<number> => {
   const cwd = resolveCwd(options.cwd);
-  const checks = [
-    { name: "package.json", pass: existsSync(join(cwd, "package.json")) },
-    { name: "shipclean config", pass: true },
+  const checks: Array<{ detail: string; name: string; pass: boolean }> = [
+    {
+      detail: "Project metadata is required for package health checks.",
+      name: "package.json",
+      pass: existsSync(join(cwd, "package.json")),
+    },
+    {
+      detail: "Configuration loads and validates.",
+      name: "shipclean config",
+      pass: true,
+    },
   ];
+  let configSummary = "";
 
   try {
-    await loadShipCleanConfig({ cwd });
-  } catch {
-    checks[1] = { name: "shipclean config", pass: false };
+    const config = await loadShipCleanConfig({ cwd });
+    configSummary = [
+      `lint: ${config.lint.enabled ? `${config.lint.engine}/${config.lint.preset}` : "off"}`,
+      `typescript: ${config.typescript.enabled ? config.typescript.mode : "off"}`,
+      `graph: ${config.graph.enabled ? "on" : "off"}`,
+      `package: ${config.package.enabled ? "on" : "off"}`,
+      `duplicates: ${config.duplicates.enabled ? "on" : "off"}`,
+      `rules: ${config.rules.length}`,
+    ].join("\n");
+  } catch (error) {
+    checks[1] = {
+      detail: error instanceof Error ? error.message : "Configuration failed to load.",
+      name: "shipclean config",
+      pass: false,
+    };
   }
 
+  intro(pc.bold("ship-clean doctor"));
   for (const check of checks) {
-    process.stdout.write(`${check.pass ? "✓" : "✗"} ${check.name}\n`);
+    if (check.pass) {
+      log.success(`${check.name} ${pc.dim(check.detail)}`);
+    } else {
+      log.error(`${check.name} ${pc.dim(check.detail)}`);
+    }
   }
 
-  return checks.every((check) => check.pass) ? 0 : 1;
+  if (configSummary) {
+    note(configSummary, "Active quality systems");
+  }
+
+  const ok = checks.every((check) => check.pass);
+  outro(
+    ok ? "Ship Clean is ready." : "Ship Clean needs attention before it can protect this project.",
+  );
+  return ok ? 0 : 1;
 };
