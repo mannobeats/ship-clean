@@ -125,6 +125,7 @@ export interface DuplicateConfig {
 }
 
 export interface PackageHealthConfig {
+  allowedUnusedDependencies?: string[];
   enabled?: boolean;
   forbidden?: string[];
   missingDependencies?: SeveritySetting;

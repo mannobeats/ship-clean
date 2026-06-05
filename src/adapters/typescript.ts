@@ -3,7 +3,7 @@ import { join } from "node:path";
 import type { ProjectContext } from "../core/project-context.js";
 import type { EngineResult, Finding } from "../core/result.js";
 import { createFindingId } from "../core/result.js";
-import { runCommand } from "./run-command.js";
+import { runPackageBin } from "./run-command.js";
 
 const parseDiagnosticLine = (diagnosticLine: string): Finding | null => {
   const match =
@@ -55,7 +55,9 @@ export const runTypeScriptCheck = async (context: ProjectContext): Promise<Engin
     };
   }
 
-  const result = runCommand("tsc", ["--noEmit", "--pretty", "false"], { cwd: context.cwd });
+  const result = runPackageBin("typescript", "tsc", ["--noEmit", "--pretty", "false"], {
+    cwd: context.cwd,
+  });
   const findings = result.stdout
     .split("\n")
     .map((line) => parseDiagnosticLine(line.trim()))

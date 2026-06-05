@@ -1,8 +1,8 @@
 # Ship Clean
 
-One install, one command, one quality gate for AI-assisted software teams.
+One install, one command, one quality gate for AI-assisted TypeScript teams.
 
-Ship Clean is an internal-first TypeScript CLI that turns project rules into an executable verification loop. It is designed for humans and AI agents working in the same codebase: agents can write code, run `ship-clean check --json`, fix structured findings, and rerun until the project is clean.
+Ship Clean turns project rules into an executable verification loop. It is designed for humans and AI agents working in the same codebase: agents can write code, run `ship-clean check --json`, fix structured findings, and rerun until the project is clean.
 
 ## Why
 
@@ -19,20 +19,23 @@ Markdown instructions are useful, but agents forget them. Ship Clean makes those
 
 ## Install
 
-Internal development:
+Run without installing:
+
+```bash
+pnpm dlx ship-clean check
+```
+
+Install in a project:
 
 ```bash
 pnpm add -D ship-clean
 ```
 
-Private Git dependency:
+Then initialize project wiring:
 
-```json
-{
-  "devDependencies": {
-    "ship-clean": "git+ssh://git@github.com/your-org/ship-clean.git"
-  }
-}
+```bash
+pnpm exec ship-clean init
+pnpm exec ship-clean check
 ```
 
 ## Commands
@@ -155,6 +158,10 @@ for files, symbols, and imports. SQLite is the required storage backend so local
 CLI commands, watch mode, and Studio always read from the same source of truth.
 Commands that need an index will build it automatically if it is missing.
 
+If your package manager blocks native build scripts, `ship-clean doctor` will
+warn when the SQLite binding is unavailable. With pnpm, run
+`pnpm approve-builds`, approve `better-sqlite3`, then run `pnpm install`.
+
 ## Presets
 
 Ship Clean supports first-party, team, and future marketplace presets:
@@ -184,7 +191,7 @@ pnpm lint
 pnpm dogfood
 ```
 
-Use `--cwd` to test against real private projects without publishing:
+Use `--cwd` to test against another local project without publishing:
 
 ```bash
 pnpm ship-clean check --cwd ../veedeyo
@@ -211,4 +218,22 @@ node dist/cli.js check --cwd test/fixtures/dirty-project
 
 ## Current Status
 
-This repository contains the foundation release: typed config, native policy rules, graph boundary checks, adapter hooks, terminal/JSON output, dogfood config, and fixture tests. The long-term product direction is to become the single quality-control platform for AI-assisted development.
+This repository contains the foundation release: typed config, native policy rules, graph boundary checks, adapter hooks, terminal/JSON output, dogfood config, fixture tests, and local code intelligence.
+
+## Publishing
+
+The public package is configured for npm:
+
+```bash
+pnpm test
+pnpm typecheck
+pnpm lint
+pnpm build
+npm publish --tag alpha
+```
+
+For the stable channel:
+
+```bash
+npm publish
+```

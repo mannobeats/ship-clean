@@ -56,6 +56,11 @@ const mergeConfig = (
   package: {
     ...base.package,
     ...(next.package ?? {}),
+    allowedUnusedDependencies: [
+      ...base.package.allowedUnusedDependencies,
+      ...(next.package?.allowedUnusedDependencies ?? []),
+    ],
+    forbidden: [...base.package.forbidden, ...(next.package?.forbidden ?? [])],
   },
   presets: isPreset(next) ? [...base.presets, next.name] : base.presets,
   rules: [...base.rules, ...(next.rules ?? [])],
@@ -97,7 +102,11 @@ export const resolveConfig = async (config: ShipCleanConfig): Promise<ResolvedCo
     graph: { ...defaultConfig.graph, entrypoints: [...defaultConfig.graph.entrypoints] },
     include: [...defaultConfig.include],
     lint: { ...defaultConfig.lint },
-    package: { ...defaultConfig.package, forbidden: [...defaultConfig.package.forbidden] },
+    package: {
+      ...defaultConfig.package,
+      allowedUnusedDependencies: [...defaultConfig.package.allowedUnusedDependencies],
+      forbidden: [...defaultConfig.package.forbidden],
+    },
     presets: [],
     rules: [...defaultConfig.rules],
     typescript: { ...defaultConfig.typescript },

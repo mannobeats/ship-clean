@@ -26,6 +26,9 @@ interface ParsedArgs {
 
 const parseArgs = (argv: string[]): ParsedArgs => {
   const [first, ...rest] = argv;
+  if (first === "--help" || first === "-h") {
+    return { command: "help", flags: {}, positional: [] };
+  }
   const command = first && !first.startsWith("-") ? first : "check";
   const tokens = first && !first.startsWith("-") ? rest : argv;
   const flags: Record<string, string | boolean> = {};

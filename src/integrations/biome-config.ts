@@ -111,7 +111,7 @@ const rulesForPreset = (preset: ResolvedConfig["lint"]["preset"]): JsonObject =>
 
 export const renderBiomeConfig = (config: Pick<ResolvedConfig, "lint"> | InitSelection): string => {
   const biomeConfig = {
-    $schema: "./node_modules/@biomejs/biome/configuration_schema.json",
+    $schema: "https://biomejs.dev/schemas/2.4.16/schema.json",
     assist: {
       actions: {
         source: {

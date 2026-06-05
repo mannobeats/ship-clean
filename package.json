@@ -1,9 +1,9 @@
 {
   "name": "ship-clean",
-  "version": "0.1.0",
-  "description": "One install, one command, one quality gate for AI-assisted software teams.",
+  "version": "0.1.0-alpha.1",
+  "description": "One install, one command, one quality gate for AI-assisted TypeScript teams.",
   "type": "module",
-  "private": true,
+  "license": "MIT",
   "bin": {
     "ship-clean": "./dist/cli.js"
   },
@@ -29,8 +29,27 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "LICENSE",
+    "README.md",
+    "SECURITY.md"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mannobeats/ship-clean.git"
+  },
+  "homepage": "https://github.com/mannobeats/ship-clean#readme",
+  "bugs": {
+    "url": "https://github.com/mannobeats/ship-clean/issues"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "scripts": {
     "dev": "tsx src/cli.ts",
     "build": "tsup",
@@ -44,10 +63,13 @@
   },
   "keywords": [
     "ai-agent",
+    "architecture",
     "code-quality",
     "cli",
     "conventions",
-    "lint"
+    "lint",
+    "static-analysis",
+    "typescript"
   ],
   "dependencies": {
     "@biomejs/biome": "2.4.16",

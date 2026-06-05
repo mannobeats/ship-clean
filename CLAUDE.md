@@ -4,7 +4,7 @@ This file provides guidance to Claude Code when working on the Ship Clean codeba
 
 ## Project Overview
 
-Ship Clean is an internal-first TypeScript CLI for AI-assisted software teams. It is intended to become one install and one quality gate for clean, safe, maintainable code:
+Ship Clean is a public TypeScript CLI for AI-assisted software teams. It is intended to be one install and one quality gate for clean, safe, maintainable code:
 
 ```bash
 ship-clean check
@@ -29,7 +29,7 @@ pnpm lint                 # run the repo linter/formatter check
 pnpm lint:fix             # apply safe formatting/lint fixes
 ```
 
-Ship Clean commands must support `--cwd` so the tool can be dogfooded against real private projects during development:
+Ship Clean commands must support `--cwd` so the tool can be dogfooded against real projects during development:
 
 ```bash
 pnpm ship-clean check --cwd .
@@ -62,7 +62,7 @@ src/
 - **Intentional config only.** This is pre-release; do not add backward-compatibility branches unless explicitly requested.
 - **Adapters hide external tools.** Biome, Oxlint, TypeScript, and future engines must normalize into Ship Clean findings.
 - **Safe writes.** Any command that writes files must respect `--cwd`, refuse path traversal, and avoid writing outside the target project.
-- **Latest dependency plan.** Check `BLUEPRINT.md` Section 12 before adding dependencies. Use exact versions for the internal build unless intentionally changed.
+- **Latest dependency plan.** Check `BLUEPRINT.md` Section 12 before adding dependencies. Keep release dependency choices intentional.
 
 ## Testing
 
@@ -103,11 +103,11 @@ Build the **Foundation Release**, not a disposable MVP:
 
 ```bash
 pnpm build
-node dist/cli.mjs check --cwd .
-node dist/cli.mjs check --cwd ../some-private-project
+node dist/cli.js check --cwd .
+node dist/cli.js check --cwd ../some-project
 ```
 
-Internal install paths should work before public release:
+Local install paths should work before public release:
 
 ```json
 {
@@ -117,4 +117,4 @@ Internal install paths should work before public release:
 }
 ```
 
-Later, publish privately as `@your-org/ship-clean`, then open source when the foundation is strong.
+Public releases ship to npm as `ship-clean`.

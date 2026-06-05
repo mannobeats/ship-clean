@@ -10,6 +10,15 @@ describe("cli", () => {
     vi.restoreAllMocks();
   });
 
+  it("prints help when the first argument is --help", async () => {
+    const stdout = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+
+    await expect(main(["--help"])).resolves.toBe(0);
+
+    expect(stdout).toHaveBeenCalledWith(expect.stringContaining("Usage:"));
+    expect(stdout).toHaveBeenCalledWith(expect.stringContaining("ship-clean check"));
+  });
+
   it("returns zero for clean projects", async () => {
     vi.spyOn(process.stdout, "write").mockImplementation(() => true);
     await expect(main(["check", "--cwd", fixture("clean-project"), "--json"])).resolves.toBe(0);

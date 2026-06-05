@@ -5,6 +5,7 @@ import { intro, log, note, outro } from "@clack/prompts";
 import pc from "picocolors";
 
 import { loadShipCleanConfig } from "../config/loader.js";
+import { getIntelligenceStorageStatus } from "../intelligence/store.js";
 import { resolveCwd } from "../utils/paths.js";
 
 export interface DoctorCommandOptions {
@@ -15,11 +16,14 @@ type DoctorCheck = { detail: string; name: string; status: "fail" | "pass" | "wa
 
 export const runDoctorCommand = async (options: DoctorCommandOptions): Promise<number> => {
   const cwd = resolveCwd(options.cwd);
+  const hasPackageJson = existsSync(join(cwd, "package.json"));
   const checks: DoctorCheck[] = [
     {
-      detail: "Project metadata is required for package health checks.",
+      detail: hasPackageJson
+        ? "Project metadata found."
+        : "Project metadata is required for package health checks.",
       name: "package.json",
-      status: existsSync(join(cwd, "package.json")) ? "pass" : "fail",
+      status: hasPackageJson ? "pass" : "fail",
     },
     {
       detail: "Configuration loads and validates.",
@@ -61,6 +65,26 @@ export const runDoctorCommand = async (options: DoctorCommandOptions): Promise<n
       name: ".vscode/settings.json",
       status: existsSync(join(cwd, ".vscode/settings.json")) ? "pass" : "warn",
     });
+
+    if (config.agent.enabled) {
+      try {
+        await getIntelligenceStorageStatus(cwd);
+        checks.push({
+          detail: "SQLite storage is available for code intelligence commands.",
+          name: "intelligence storage",
+          status: "pass",
+        });
+      } catch (error) {
+        checks.push({
+          detail:
+            error instanceof Error
+              ? error.message
+              : "SQLite storage is not available for code intelligence commands.",
+          name: "intelligence storage",
+          status: "warn",
+        });
+      }
+    }
   } catch (error) {
     checks[1] = {
       detail: error instanceof Error ? error.message : "Configuration failed to load.",

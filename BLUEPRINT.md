@@ -2,7 +2,7 @@
 
 > One install, one command, one quality gate for AI-assisted software teams.
 
-**Status:** Internal-first product design document
+**Status:** Public alpha product design document
 **Author:** mannobeats
 **Last updated:** 2026-05-27
 
@@ -10,7 +10,7 @@
 
 ## 1. Product Vision
 
-Ship Clean is an all-in-one TypeScript CLI that helps humans and AI agents ship clean, safe, maintainable code. It replaces a scattered quality stack with one private tool that can later become open source.
+Ship Clean is an all-in-one TypeScript CLI that helps humans and AI agents ship clean, safe, maintainable code. It replaces a scattered quality stack with one public tool that teams can install directly from npm.
 
 The goal is not to build a small convention checker. The goal is to build a **project quality operating system**:
 
@@ -70,7 +70,7 @@ They should not need to separately install Biome, Oxlint, Knip, Fallow, dependen
 
 2. **Agent-first output.** Every finding must include enough structured data for an AI agent to fix it: source, rule, severity, location, message, expected/actual context, and repair actions.
 
-3. **Private-first, open-source-ready.** The first users are internal projects. The architecture, package boundaries, test suite, docs, and dependency choices should still be professional enough to publish later.
+3. **Public-first, production-shaped.** The first public versions can be alpha releases, but the install path, package boundaries, docs, and dependency choices must feel trustworthy from day one.
 
 4. **Leverage proven engines.** We do not reimplement excellent tools just to prove a point. We bundle or adapter-wrap strong engines, normalize their output, and build native Ship Clean engines for the gaps.
 
@@ -118,8 +118,8 @@ ship-clean
 │   ├── TypeScript adapter
 │   └── future structural-search adapters
 └── Experience layer
-    ├── internal install workflow
-    ├── private package support
+    ├── npm install workflow
+    ├── public package support
     ├── CI integration
     ├── git hooks
     ├── editor config
@@ -198,7 +198,7 @@ ship-clean fix --cwd ../app
 
 ship-clean init                  Create config and install project wiring
 ship-clean init --preset react
-ship-clean init --internal       Internal/private defaults
+ship-clean init --yes            Non-interactive defaults
 
 ship-clean doctor                Verify installation, config, engines, hooks, and agent files
 ship-clean explain <rule>        Explain a rule with examples and repair guidance
@@ -426,7 +426,7 @@ agent/rule-linked          Ensure project policy maps to agent docs
 
 ## 12. Dependency Plan
 
-Versions below were checked from npm on 2026-05-27 with `npm view <package> version`. Use exact versions in the first internal build for repeatability, then let Renovate/Dependabot propose upgrades.
+Versions below were checked from npm on 2026-05-27 with `npm view <package> version`. Use intentional versions for repeatability, then let Renovate/Dependabot propose upgrades.
 
 ### Runtime Dependencies
 
@@ -462,14 +462,14 @@ Versions below were checked from npm on 2026-05-27 with `npm view <package> vers
 
 - Ship Clean users install one package. Runtime engines should be direct dependencies of Ship Clean unless there is a strong reason to make one optional.
 - Keep external tools behind adapters. No external tool schema should leak into Ship Clean's public JSON contract.
-- Prefer exact versions for the internal private package.
+- Prefer intentional versions for the public package.
 - Revisit `c12` before public release because the current latest tag is beta. If that remains true near publication, either pin it deliberately or use a stable config loader.
 - Do not add heavy UI/runtime dependencies. Studio is served by the CLI and should
   remain local, fast, and dependency-light.
 
-## 13. Internal Development And Testing
+## 13. Development And Testing
 
-Ship Clean must support testing against itself and against real private projects before publication.
+Ship Clean must support testing against itself and against real projects before publication.
 
 ```bash
 pnpm install
@@ -508,9 +508,9 @@ Test coverage must include:
 - `--cwd` tests
 - `fix` dry-run and safe-fix tests
 
-## 14. Private Installation Strategy
+## 14. Public Installation Strategy
 
-During internal development:
+During local development:
 
 ```json
 {
@@ -520,27 +520,17 @@ During internal development:
 }
 ```
 
-For team use before open source:
-
-```json
-{
-  "devDependencies": {
-    "ship-clean": "git+ssh://git@github.com/your-org/ship-clean.git"
-  }
-}
-```
-
-Preferred internal package path:
+Published package path:
 
 ```bash
-pnpm add -D @your-org/ship-clean
+pnpm add -D ship-clean
 ```
 
-Ship Clean should be easy to publish privately to GitHub Packages, npm private packages, or a private registry.
+Ship Clean should be easy to publish publicly to npm and test through `pnpm dlx ship-clean`.
 
 ## 15. Implementation Roadmap
 
-This is not a disposable MVP. The first build is the **Foundation Release**: a production-shaped internal tool with the full architecture in place.
+This is not a disposable MVP. The first build is the **Foundation Release**: a production-shaped public alpha with the full architecture in place.
 
 ### Foundation Release
 
@@ -601,10 +591,10 @@ This is not a disposable MVP. The first build is the **Foundation Release**: a p
 
 Ship Clean is successful when:
 
-1. A developer installs one private package and can replace several quality commands with `ship-clean check`.
+1. A developer installs one public package and can replace several quality commands with `ship-clean check`.
 2. An AI agent can run `ship-clean check --json`, fix findings, and rerun until clean.
-3. Internal projects can use `--cwd` for local dogfooding before private package rollout.
+3. Projects can use `--cwd` for local dogfooding before publishing changes.
 4. The output schema remains stable and useful for agents.
 5. The tool catches project-specific conventions that generic linters miss.
-6. The graph/package engines replace the need for separate unused-code and dependency-health tools in the internal stack.
-7. The foundation is clean enough to open source later without a rewrite.
+6. The graph/package engines replace the need for separate unused-code and dependency-health tools in the stack.
+7. The foundation is clean enough to build toward v1 without a rewrite.

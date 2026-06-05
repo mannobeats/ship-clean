@@ -135,6 +135,7 @@ const duplicatesConfigSchema = z
 
 const packageHealthConfigSchema = z
   .object({
+    allowedUnusedDependencies: z.array(z.string()).optional(),
     enabled: z.boolean().optional(),
     forbidden: z.array(z.string()).optional(),
     missingDependencies: severitySettingSchema.optional(),

@@ -19,6 +19,22 @@ const packageNameFromImport = (source: string): string | null => {
   return parts[0] ?? null;
 };
 
+const dependencyAppearsInScripts = (name: string, scripts: Record<string, string>): boolean => {
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+  const pattern = new RegExp(`(^|[^\\w@/.-])${escaped}($|[^\\w@/.-])`, "u");
+  return Object.values(scripts).some((script) => pattern.test(script));
+};
+
+const isAllowedUnusedDependency = (context: ProjectContext, name: string): boolean => {
+  if (name.startsWith("@types/")) {
+    return true;
+  }
+  if (context.config.package.allowedUnusedDependencies.includes(name)) {
+    return true;
+  }
+  return dependencyAppearsInScripts(name, context.packageJson?.scripts ?? {});
+};
+
 const packageFinding = (input: {
   actual?: string;
   expected?: string;
@@ -88,7 +104,11 @@ export const runPackageHealth = async (context: ProjectContext): Promise<Finding
   const unusedSeverity = severityFromSetting(context.config.package.unusedDependencies);
   if (unusedSeverity) {
     for (const name of declared) {
-      if (!imported.has(name) && !context.config.package.forbidden.includes(name)) {
+      if (
+        !imported.has(name) &&
+        !context.config.package.forbidden.includes(name) &&
+        !isAllowedUnusedDependency(context, name)
+      ) {
         findings.push(
           packageFinding({
             actual: `${name} declared but not imported`,

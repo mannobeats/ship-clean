@@ -34,12 +34,14 @@ interface BetterSqliteModule {
 
 const sqliteBuildError = (error: unknown): Error => {
   const detail = error instanceof Error ? error.message : String(error);
+  const summary = (detail.split("\n")[0] ?? detail).replace(/\s*Tried:$/u, "");
   return new Error(
     [
       "Ship Clean requires SQLite storage through better-sqlite3.",
       "The native better-sqlite3 binding is not available in this install.",
-      "Run `pnpm approve-builds` and approve `better-sqlite3`, then run `pnpm install`.",
-      `Original error: ${detail}`,
+      "If your package manager blocks native build scripts, approve or rebuild `better-sqlite3`.",
+      "With pnpm, run `pnpm approve-builds`, approve `better-sqlite3`, then run `pnpm install`.",
+      `Original error: ${summary}`,
     ].join("\n"),
   );
 };

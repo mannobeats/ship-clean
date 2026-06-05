@@ -1,6 +1,4 @@
-import { defineConfig } from "./src/config/define-config.js";
-
-export default defineConfig({
+export default {
   extends: ["ship-clean/recommended"],
   lint: {
     enabled: false,
@@ -41,4 +39,4 @@ export default defineConfig({
       message: "Placeholder for future default-export policy.",
     },
   ],
-});
+} satisfies import("ship-clean").ShipCleanConfig;

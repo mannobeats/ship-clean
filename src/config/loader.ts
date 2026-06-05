@@ -94,6 +94,7 @@ export const createStarterConfig = (): string =>
       preset: "strict",
     },
     package: {
+      allowedUnusedDependencies: ["ship-clean"],
       enabled: true,
       forbidden: ["moment"],
       missingDependencies: "error",

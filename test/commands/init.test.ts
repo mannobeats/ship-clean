@@ -55,6 +55,7 @@ describe("init command", () => {
     expect(config).toContain('"src/server.ts"');
 
     const biomeConfig = await readFile(join(cwd, "biome.jsonc"), "utf8");
+    expect(biomeConfig).toContain("https://biomejs.dev/schemas/");
     expect(biomeConfig).toContain('"noUnusedImports"');
     expect(biomeConfig).toContain('"lineWidth": 80');
 

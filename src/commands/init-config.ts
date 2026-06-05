@@ -15,7 +15,10 @@ export interface InitSelection {
   };
   lint: Required<LintConfig>;
   package: Required<
-    Pick<PackageHealthConfig, "enabled" | "missingDependencies" | "unusedDependencies">
+    Pick<
+      PackageHealthConfig,
+      "allowedUnusedDependencies" | "enabled" | "missingDependencies" | "unusedDependencies"
+    >
   > & {
     forbidden: string[];
   };
@@ -54,6 +57,7 @@ export const defaultInitSelection = (): InitSelection => ({
     preset: "strict",
   },
   package: {
+    allowedUnusedDependencies: ["ship-clean"],
     enabled: true,
     forbidden: ["moment"],
     missingDependencies: "error",
@@ -147,6 +151,7 @@ export const renderConfig = (selection: InitSelection): string => `export defaul
     enabled: ${selection.package.enabled},
     missingDependencies: "${selection.package.missingDependencies}",
     unusedDependencies: "${selection.package.unusedDependencies}",
+    allowedUnusedDependencies: ${renderStringArray(selection.package.allowedUnusedDependencies)},
     forbidden: ${renderStringArray(selection.package.forbidden)},
   },
   duplicates: {
