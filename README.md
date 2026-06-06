@@ -67,7 +67,6 @@ or AI-agent setup where prompts are not appropriate.
 Init treats Ship Clean as the source of truth and wires the project around it:
 
 - `shipclean.config.ts` for the executable quality contract
-- `biome.jsonc` when Biome is the selected lint/format engine
 - `.vscode/settings.json` for format-on-save and code actions
 - `AGENTS.md` so AI agents run the Ship Clean quality loop
 - `package.json` scripts for `ship-clean:check`, `ship-clean:fix`, and `ship-clean:doctor`
@@ -128,9 +127,10 @@ export default {
 } satisfies import("ship-clean").ShipCleanConfig;
 ```
 
-Generated native tool configs are adapter files. For example, `biome.jsonc` is
-produced from the Ship Clean lint preset so humans, editors, CI, and agents use
-the same rules without each developer hand-rolling formatter settings.
+Native tool configs are adapter internals. For example, when the Biome adapter is
+selected, Ship Clean writes `.ship-clean/biome.generated.json` during `check` and
+`fix`, then passes it to Biome with `--config-path`. Projects keep one quality
+contract: `shipclean.config.*`.
 
 ## Code Intelligence
 

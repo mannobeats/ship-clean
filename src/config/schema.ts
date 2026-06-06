@@ -98,6 +98,7 @@ export const ruleSchema = z.discriminatedUnion("type", [
 
 const lintConfigSchema = z
   .object({
+    biome: z.record(z.string(), z.unknown()).optional(),
     enabled: z.boolean().optional(),
     engine: z.enum(["biome", "oxlint"]).optional(),
     format: z.boolean().optional(),

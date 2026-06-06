@@ -1,7 +1,11 @@
-import { isAbsolute, relative } from "node:path";
+import { isAbsolute, relative, resolve } from "node:path";
 import type { ProjectContext } from "../core/project-context.js";
 import type { EngineResult, Finding } from "../core/result.js";
 import { createFindingId } from "../core/result.js";
+import { renderBiomeConfig } from "../integrations/biome-config.js";
+import type { ResolvedConfig } from "../rules/types.js";
+import { writeProjectFile } from "../utils/fs.js";
+import { findByGlob } from "../utils/glob.js";
 import { runPackageBin } from "./run-command.js";
 
 interface BiomeDiagnostic {
@@ -20,6 +24,8 @@ interface BiomeDiagnostic {
 interface BiomeJsonOutput {
   diagnostics?: BiomeDiagnostic[];
 }
+
+const GENERATED_BIOME_CONFIG = ".ship-clean/biome.generated.json";
 
 const severityFromBiome = (severity: string | undefined): Finding["severity"] => {
   if (severity === "error") {
@@ -112,12 +118,30 @@ const commandFinding = (message: string, severity: "error" | "warn" = "error"): 
   source: "biome",
 });
 
+const materializeBiomeConfig = async (
+  cwd: string,
+  config: Pick<ResolvedConfig, "lint">,
+): Promise<string> => {
+  await writeProjectFile(cwd, GENERATED_BIOME_CONFIG, renderBiomeConfig(config));
+  return resolve(cwd, GENERATED_BIOME_CONFIG);
+};
+
+const targetArgs = (files: string[]): string[] => (files.length > 0 ? files : ["."]);
+
 export const runBiomeCheck = async (context: ProjectContext): Promise<EngineResult> => {
   const started = performance.now();
+  const configPath = await materializeBiomeConfig(context.cwd, context.config);
   const result = runPackageBin(
     "@biomejs/biome",
     "biome",
-    ["check", "--reporter=json", "--no-errors-on-unmatched", "."],
+    [
+      "check",
+      "--reporter=json",
+      "--no-errors-on-unmatched",
+      "--config-path",
+      configPath,
+      ...targetArgs(context.files),
+    ],
     {
       cwd: context.cwd,
     },
@@ -143,7 +167,25 @@ export const runBiomeCheck = async (context: ProjectContext): Promise<EngineResu
   };
 };
 
-export const runBiomeFix = (cwd: string): number =>
-  runPackageBin("@biomejs/biome", "biome", ["check", "--write", "--no-errors-on-unmatched", "."], {
+export const runBiomeFix = async (cwd: string, config: ResolvedConfig): Promise<number> => {
+  const configPath = await materializeBiomeConfig(cwd, config);
+  const files = await findByGlob(config.include, {
     cwd,
-  }).exitCode;
+    exclude: config.exclude,
+  });
+  return runPackageBin(
+    "@biomejs/biome",
+    "biome",
+    [
+      "check",
+      "--write",
+      "--no-errors-on-unmatched",
+      "--config-path",
+      configPath,
+      ...targetArgs(files),
+    ],
+    {
+      cwd,
+    },
+  ).exitCode;
+};

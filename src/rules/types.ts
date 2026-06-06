@@ -95,7 +95,10 @@ export type ShipCleanRule =
 
 export type SeveritySetting = Exclude<Severity, "info"> | "off";
 
+export type JsonConfigObject = Record<string, unknown>;
+
 export interface LintConfig {
+  biome?: JsonConfigObject;
   enabled?: boolean;
   engine?: "biome" | "oxlint";
   format?: boolean;

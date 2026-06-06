@@ -127,6 +127,32 @@ const reachableFrom = (entrypoints: string[], adjacency: Map<string, string[]>):
   return reachable;
 };
 
+const nextEntrypointGlobs = [
+  "app/**/{page,layout,loading,error,not-found,template,default,route,global-error,forbidden,unauthorized}.{ts,tsx,js,jsx}",
+  "app/global-not-found.{ts,tsx,js,jsx}",
+  "app/**/{opengraph-image,twitter-image,icon,apple-icon,manifest,sitemap,robots}.{ts,tsx,js,jsx}",
+  "pages/**/*.{ts,tsx,js,jsx}",
+  "src/app/**/{page,layout,loading,error,not-found,template,default,route,global-error,forbidden,unauthorized}.{ts,tsx,js,jsx}",
+  "src/app/global-not-found.{ts,tsx,js,jsx}",
+  "src/app/**/{opengraph-image,twitter-image,icon,apple-icon,manifest,sitemap,robots}.{ts,tsx,js,jsx}",
+  "src/pages/**/*.{ts,tsx,js,jsx}",
+  "{middleware,proxy,instrumentation,instrumentation-client}.{ts,js}",
+  "src/{middleware,proxy,instrumentation,instrumentation-client}.{ts,js}",
+  "next.config.{ts,js,mjs,cjs}",
+  "postcss.config.{ts,js,mjs,cjs}",
+  "src/mdx-components.{ts,tsx,js,jsx}",
+  "mdx-components.{ts,tsx,js,jsx}",
+];
+
+const hasDependency = (context: ProjectContext, name: string): boolean =>
+  Boolean(
+    context.packageJson?.dependencies?.[name] ??
+      context.packageJson?.devDependencies?.[name] ??
+      context.packageJson?.peerDependencies?.[name],
+  );
+
+const uniqueFiles = (files: string[]): string[] => [...new Set(files)];
+
 const resolveEntrypoints = async (context: ProjectContext): Promise<string[]> => {
   if (context.config.graph.entrypoints.length > 0) {
     return findByGlob(context.config.graph.entrypoints, {
@@ -135,9 +161,19 @@ const resolveEntrypoints = async (context: ProjectContext): Promise<string[]> =>
     });
   }
 
-  return context.files.filter((file) =>
+  const conventionEntrypoints = context.files.filter((file) =>
     /(^|\/)(main|index|cli|server|app|page)\.(ts|tsx|js|jsx)$/u.test(file),
   );
+
+  if (!hasDependency(context, "next")) {
+    return conventionEntrypoints;
+  }
+
+  const nextEntrypoints = await findByGlob(nextEntrypointGlobs, {
+    cwd: context.cwd,
+    exclude: context.config.exclude,
+  });
+  return uniqueFiles([...conventionEntrypoints, ...nextEntrypoints]);
 };
 
 export const runGraphHealth = async (context: ProjectContext): Promise<Finding[]> => {

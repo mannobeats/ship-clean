@@ -54,10 +54,7 @@ describe("init command", () => {
     expect(config).toContain('preset: "strict"');
     expect(config).toContain('"src/server.ts"');
 
-    const biomeConfig = await readFile(join(cwd, "biome.jsonc"), "utf8");
-    expect(biomeConfig).toContain("https://biomejs.dev/schemas/");
-    expect(biomeConfig).toContain('"noUnusedImports"');
-    expect(biomeConfig).toContain('"lineWidth": 80');
+    await expect(readFile(join(cwd, "biome.jsonc"), "utf8")).rejects.toThrow();
 
     const agentRules = await readFile(join(cwd, "AGENTS.md"), "utf8");
     expect(agentRules).toContain("Ship Clean Quality Loop");

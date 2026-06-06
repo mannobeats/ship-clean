@@ -37,6 +37,7 @@ export const defaultConfig: ResolvedConfig = {
     "packages/*/src/**/*.{ts,tsx,js,jsx}",
   ],
   lint: {
+    biome: {},
     enabled: true,
     engine: "biome",
     format: true,

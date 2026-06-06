@@ -87,6 +87,7 @@ export const createStarterConfig = (): string =>
       unusedFiles: "warn",
     },
     lint: {
+      biome: {},
       enabled: true,
       engine: "biome",
       format: true,

@@ -46,9 +46,9 @@ export const runDoctorCommand = async (options: DoctorCommandOptions): Promise<n
 
     if (config.lint.enabled && config.lint.engine === "biome") {
       checks.push({
-        detail: "Ship Clean can materialize Biome rules for editor and CLI consistency.",
-        name: "biome.jsonc",
-        status: existsSync(join(cwd, "biome.jsonc")) ? "pass" : "warn",
+        detail: "Ship Clean materializes Biome rules from shipclean config during check/fix.",
+        name: "biome adapter",
+        status: "pass",
       });
     }
 

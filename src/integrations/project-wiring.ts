@@ -1,7 +1,6 @@
 import type { InitSelection } from "../commands/init-config.js";
 import { writeProjectFile } from "../utils/fs.js";
 import { renderAgentRules } from "./agent-rules.js";
-import { renderBiomeConfig } from "./biome-config.js";
 import { renderVscodeSettings } from "./editor-config.js";
 import { upsertShipCleanScripts } from "./package-json.js";
 
@@ -15,11 +14,6 @@ export const syncProjectWiring = async (
   selection: InitSelection,
 ): Promise<ProjectWiringResult> => {
   const files: string[] = [];
-
-  if (selection.lint.enabled && selection.lint.engine === "biome") {
-    await writeProjectFile(cwd, "biome.jsonc", renderBiomeConfig(selection));
-    files.push("biome.jsonc");
-  }
 
   await writeProjectFile(cwd, ".vscode/settings.json", renderVscodeSettings(selection));
   files.push(".vscode/settings.json");

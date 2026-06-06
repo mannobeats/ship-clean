@@ -50,6 +50,7 @@ export const defaultInitSelection = (): InitSelection => ({
     unusedFiles: "warn",
   },
   lint: {
+    biome: {},
     enabled: true,
     engine: "biome",
     format: true,

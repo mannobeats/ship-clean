@@ -139,5 +139,5 @@ export const renderBiomeConfig = (config: Pick<ResolvedConfig, "lint"> | InitSel
     },
   };
 
-  return `${JSON.stringify(biomeConfig, null, 2)}\n`;
+  return `${JSON.stringify(mergeObjects(biomeConfig, config.lint.biome ?? {}), null, 2)}\n`;
 };

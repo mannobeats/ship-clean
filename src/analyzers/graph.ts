@@ -1,4 +1,4 @@
-import { resolveRelativeImport, scanModule } from "./imports.js";
+import { loadPathAliases, resolveImport, scanModule } from "./imports.js";
 
 export interface ImportEdge {
   from: string;
@@ -10,6 +10,7 @@ export interface ImportEdge {
 
 export const buildImportGraph = async (cwd: string, files: string[]): Promise<ImportEdge[]> => {
   const edges: ImportEdge[] = [];
+  const aliases = await loadPathAliases(cwd);
 
   for (const file of files) {
     const scan = await scanModule(cwd, file);
@@ -19,7 +20,7 @@ export const buildImportGraph = async (cwd: string, files: string[]): Promise<Im
         isTypeOnly: item.isTypeOnly,
         line: item.line,
         source: item.source,
-        to: resolveRelativeImport(file, item.source, files),
+        to: resolveImport(file, item.source, files, aliases),
       });
     }
   }

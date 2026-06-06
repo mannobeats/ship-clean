@@ -12,6 +12,11 @@ const packageNameFromImport = (source: string): string | null => {
   if (source.startsWith(".") || source.startsWith("node:")) {
     return null;
   }
+  if (
+    /\.(css|scss|sass|less|pcss|woff2?|ttf|otf|eot|png|jpe?g|gif|svg|webp|avif)$/iu.test(source)
+  ) {
+    return null;
+  }
   const parts = source.split("/");
   if (source.startsWith("@")) {
     return parts.length >= 2 ? `${parts[0]}/${parts[1]}` : source;
@@ -80,6 +85,7 @@ export const runPackageHealth = async (context: ProjectContext): Promise<Finding
   const edges = await buildImportGraph(context.cwd, context.files);
   const imported = new Set(
     edges
+      .filter((edge) => !edge.to)
       .map((edge) => packageNameFromImport(edge.source))
       .filter((name): name is string => Boolean(name)),
   );
